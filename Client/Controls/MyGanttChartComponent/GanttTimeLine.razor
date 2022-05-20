@@ -3,13 +3,9 @@
 		<tr>
 			@for(int i = start; i< end; i++)
 			{
-				<td  class="border-top-0" style="height:10px" ></td>
-			}
-		</tr>
-		<tr>
-			@for(int i = start; i< end; i++)
-			{
-				<td class="border-bottom-0" style="height:10px; text-align: center; vertical-align: top">@i</td>
+				<td>
+				<TimeLinePoint pointText=@i.ToString()></TimeLinePoint>
+				</td>
 			}
 		</tr>
 	</tbody>
