@@ -1,0 +1,74 @@
+﻿@using System.Reflection
+<table class="table is-bordered">
+	<tbody>
+		@foreach(WoInfo woInfo in woinfos)
+		{
+			<tr>
+				<td class="is-narrow border-0">@woInfo.machine</td>
+				<td>
+					<MyGanttBar 
+					    wo=@woInfo.wo
+						startPositionPercent=@GetStartPosition(@woInfo.t.startTime)
+					    widthPercent=@GetWidth(@woInfo.t.startTime, @woInfo.t.endTime)
+						startTime=@woInfo.t.startTime
+					    endTime=@woInfo.t.endTime>
+					</MyGanttBar>
+					</td>
+			</tr>
+		}
+		<tr>
+			<td class="border-0"></td>
+			<td class="border-0">
+				<GanttTimeLine start=@minTime end=@maxTime></GanttTimeLine>
+			</td>
+		</tr>
+	</tbody>
+</table>
+
+
+
+@code {
+
+	MemberInfo[] memberInfos = new MemberInfo[] { };
+	int minTime = 0;
+	int maxTime = 0;
+	List<int> allTimes = new List<int>();
+	int interval = 0;
+
+	protected override void OnParametersSet()
+	{
+		base.OnParametersSet();
+		if (woinfos != null && woinfos.Count > 0)
+		{
+			foreach (WoInfo info in woinfos)
+			{
+				allTimes.Add(info.t.startTime);
+				allTimes.Add(info.t.endTime);
+			}
+			minTime = allTimes.Min();
+			maxTime = allTimes.Max();
+			interval = maxTime - minTime;
+		}
+	}
+
+	private float GetStartPosition(int startTime)
+	{
+		float res = 0.0f;
+		int distance = startTime - minTime;
+		res = (float)distance / (float)interval;
+
+		return res*100;
+	}
+
+	private float GetWidth(int startTime, int endTime)
+	{
+		float res = 0.0f;
+		int thisInterval = 0;
+		thisInterval = endTime - startTime;
+		res = (float)thisInterval / (float)interval;
+		return res*100;
+	}
+
+	[Parameter]
+	public List<WoInfo> woinfos { get; set; } = new List<WoInfo>();
+}

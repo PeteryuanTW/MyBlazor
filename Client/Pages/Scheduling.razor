@@ -1,0 +1,44 @@
+﻿@page "/scheduling"
+@inject IJSRuntime JsRuntime
+<h3>Scheduling</h3>
+<MyGanttChart woinfos=@a></MyGanttChart>
+<!--
+<button type="button" class="btn btn-info" @onclick="Show">Get Schedule</button>
+<br>
+<br>
+<br>
+<div id="chart"></div>
+-->
+@code {
+
+	private List<WoInfo> a = new List<WoInfo>();
+	protected override void OnInitialized()
+	{
+		a.Add(new WoInfo("wo1", "m1", 0, 4));
+		a.Add(new WoInfo("wo2", "m2", 9, 10));
+		a.Add(new WoInfo("wo3", "m3", 0, 10));
+	}
+
+	private async void Show()
+	{
+		DateTime o = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+		long start = (long)(DateTime.Now - o).TotalMilliseconds;
+		long end = (long)(DateTime.Now.AddHours(1)-o).TotalMilliseconds;
+		long[] interval = {start, end};
+		MachineWorkingTime machineWorkingTime = new MachineWorkingTime("M1", interval);
+
+		MachineWorkingTime[] machineWorkingTimeList = {machineWorkingTime}; 
+
+		WoUnit woUnit = new WoUnit("WO1", machineWorkingTimeList);
+
+		WoUnit[] woUnitList = { woUnit };
+		string res = Newtonsoft.Json.JsonConvert.SerializeObject(machineWorkingTime);
+
+		string a = Newtonsoft.Json.JsonConvert.SerializeObject(interval);
+		string b = Newtonsoft.Json.JsonConvert.SerializeObject(machineWorkingTimeList);
+		string c = Newtonsoft.Json.JsonConvert.SerializeObject(woUnit);
+		string d = Newtonsoft.Json.JsonConvert.SerializeObject(woUnitList);
+		
+		await JsRuntime.InvokeAsync<Task>("draw", d);
+	}
+}

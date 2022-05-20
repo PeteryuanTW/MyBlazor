@@ -1,0 +1,126 @@
+﻿@inject IJSRuntime JsRuntime
+
+<div class="columns">
+	<div class="column is-narrow">
+		@labelName
+	</div>
+	<div class="column is-narrow">
+		<label for="@this.GetHashCode()" class="btn btn-secondary oi oi-folder"></label>
+	</div>
+	<div class="column is-narrow @nameColor">
+		<label>@fileName</label>
+	</div>
+	<div class="column is-narrow">
+		<input type="checkbox" disabled checked="@verifyStatus">
+	</div>
+	<div class="column is-narrow">
+		<label>@verifyStatusString</label>
+	</div>
+</div>
+@*invisible*@
+<InputFile class="invisible" id="@this.GetHashCode()" OnChange="@OnImportFile"></InputFile>
+
+
+
+@code {
+	#region public input
+	[Parameter]
+	public string labelName { set; get; }="title";
+	#endregion
+
+	#region private parameter
+	private string fileName { set; get; } = "File Name";
+	private string nameColor { set; get; } = "text-black-50";
+	private bool verifyStatus { set; get; } = false;
+	private string verifyStatusString { set; get; } = "not verify yet";
+	#endregion
+
+	#region function
+	private async Task OnImportFile(InputFileChangeEventArgs e)
+	{
+		if (!CheckFileType(e.File.Name, new List<string>{"xlsx"}))
+		{
+			SetFileName("excel only");
+			ChangeNameColor("wrongType");
+			return;
+		}
+		ChangeNameColor("rightType");
+		SetFileName(e.File.Name);
+		ChangeVerifyState("verifing");
+		//var fileStream = e.File.OpenReadStream();
+		//var ms = new MemoryStream();
+		//await fileStream.CopyToAsync(ms);
+		ChangeVerifyState(await VerifyFile());
+		//fileStream.Close();
+		//ms.Dispose();
+
+
+	}
+
+	private async Task<string> VerifyFile()
+	{
+		string res = "success";
+		await Task.Delay(3000);
+		return res;
+	}
+
+	private bool CheckFileType(string fileName, List<string> type)
+	{
+		if (type.Contains(fileName.Split(".")[^1])) return true;
+		else return false;
+
+	}
+
+	#endregion
+
+	#region UI
+	private void SetFileName(string fileName)
+	{
+		this.fileName = fileName;
+	}
+
+	private void ChangeNameColor(string status)
+	{
+		switch (status)
+		{
+			case "null":
+				nameColor = "text-black-50";
+				break;
+			case "wrongType":
+				nameColor = "text-danger";
+				break;
+			case "rightType":
+				nameColor = "text-success";
+				break;
+			default:
+				break;
+		}
+	}
+
+	private void ChangeVerifyState(string status)//including label & checkbox
+	{
+		switch (status)
+		{
+			case "yet":
+				verifyStatus = false;
+				verifyStatusString = "not verify yet";
+				break;
+			case "verifing":
+			    verifyStatus = false;
+				verifyStatusString = "verifing...";
+				break;
+			case "fail":
+			    verifyStatus = false;
+				verifyStatusString = "fail";
+				break;
+			case "success":
+			    verifyStatus = true;
+				verifyStatusString = "success";
+				break;
+			default:
+				break;
+		}
+	}
+
+	#endregion
+}
