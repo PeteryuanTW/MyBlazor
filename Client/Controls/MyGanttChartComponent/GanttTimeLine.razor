@@ -1,14 +1,20 @@
 ﻿<table>
-	<tbody>
-		<tr>
-			@for(int i = start; i< end; i++)
-			{
-				<td>
-				<TimeLinePoint pointText=@i.ToString()></TimeLinePoint>
-				</td>
-			}
-		</tr>
-	</tbody>
+	<tr>
+	@for(int i = @start; i<@end; i++)
+	{
+		<td class="border-top-0" style="border:dashed; color:gray"></td>
+	}
+	</tr>
+	<tr>
+	@for(int i = @start+1; i<=@end; i++)
+	{
+
+		<td class="border-0" style="position:relative;transform:translateX(50%)">
+			<TimeLinePoint pointText="@i.ToString()"></TimeLinePoint>
+		</td>
+
+	}
+	</tr>
 </table>
 
 @code {

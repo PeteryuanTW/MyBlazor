@@ -1,10 +1,13 @@
 ﻿@using System.Reflection
+<h2>start at: @minTime</h2>
 <table class="table is-bordered">
 	<tbody>
 		@foreach(WoInfo woInfo in woinfos)
 		{
 			<tr>
-				<td class="is-narrow border-0">@woInfo.machine</td>
+				<td class="is-narrow border-0">
+					<button type="button" class="btn btn-outline-success" @onclick="AddWOClick">@woInfo.machine</button>
+				</td>
 				<td>
 					<MyGanttBar 
 					    wo=@woInfo.wo
@@ -13,17 +16,22 @@
 						startTime=@woInfo.t.startTime
 					    endTime=@woInfo.t.endTime>
 					</MyGanttBar>
-					</td>
+				</td>
 			</tr>
 		}
 		<tr>
-			<td class="border-0"></td>
-			<td>
-				<GanttTimeLine start=@minTime end=@maxTime></GanttTimeLine>
+			<td  class="border-0"></td>
+			<td  class="border-0">
+				<GanttTimeLine start="@minTime" end="@maxTime"></GanttTimeLine>
 			</td>
 		</tr>
 	</tbody>
 </table>
+
+@if (showAddWODiakogue)
+{
+	<AddWODialogue display="displayHandler"></AddWODialogue>
+}
 
 
 
@@ -34,6 +42,12 @@
 	int maxTime = 0;
 	List<int> allTimes = new List<int>();
 	int interval = 0;
+
+	bool showAddWODiakogue = false;
+	void displayHandler(bool display)
+	{
+		showAddWODiakogue=display;
+	}
 
 	protected override void OnParametersSet()
 	{
@@ -69,6 +83,13 @@
 		return res*100;
 	}
 
+	private void AddWOClick()
+	{
+		showAddWODiakogue = true;
+	}
+
 	[Parameter]
 	public List<WoInfo> woinfos { get; set; } = new List<WoInfo>();
+	[Parameter]
+	public EventCallback<string> clickMachine{ get; set; }
 }
