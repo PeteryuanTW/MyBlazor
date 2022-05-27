@@ -8,8 +8,8 @@
 	private List<WoInfo> a = new List<WoInfo>();
 	protected override void OnInitialized()
 	{
-		a.Add(new WoInfo("wo1", "m1", 0, 4));
-		a.Add(new WoInfo("wo2", "m2", 9, 10));
-		a.Add(new WoInfo("wo3", "m3", 0, 10));
+		a.Add(new WoInfo("wo1", "m1", DateTime.Now, DateTime.Now.AddHours(3)));
+		a.Add(new WoInfo("wo2", "m2", DateTime.Now.AddHours(1), DateTime.Now.AddHours(4)));
+		a.Add(new WoInfo("wo3", "m3", DateTime.Now.AddHours(3), DateTime.Now.AddHours(5)));
 	}
 }

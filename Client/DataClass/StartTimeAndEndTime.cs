@@ -2,10 +2,10 @@
 {
 	public class StartTimeAndEndTime
 	{
-		public int startTime;
-		public int endTime;
+		public DateTime startTime;
+		public DateTime endTime;
 
-		public StartTimeAndEndTime(int start, int end)
+		public StartTimeAndEndTime(DateTime start, DateTime end)
 		{
 			startTime = start;
 			endTime = end;

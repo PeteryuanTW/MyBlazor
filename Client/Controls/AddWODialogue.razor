@@ -2,10 +2,22 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h4 class="modal-title">Insert WorkOrder</h4>
+                <h4 class="modal-title">Insert WorkOrder in: @machine</h4>
             </div>
             <div class="modal-body">
-                <p>This is the message text.</p>
+                <table>
+                    <thead>Current WorkOrder</thead>
+                    <tr>
+                        <td>wo</td>
+                        <td>start</td>
+                        <td>end</td>
+                    </tr>
+                    <tr>
+                        <td>@wo</td>
+                        <td>@t.startTime</td>
+                        <td>@t.endTime</td>
+                    </tr>
+                </table>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-primary">Insert</button>
@@ -18,4 +30,10 @@
 @code{
     [Parameter]
     public EventCallback<bool> display { get; set; }
+    [Parameter]
+    public string machine { get; set; } = "";
+    [Parameter]
+    public string wo { get; set; } = "";
+    [Parameter]
+    public StartTimeAndEndTime t{ get; set; } = new StartTimeAndEndTime(DateTime.Now, DateTime.Now);
 }

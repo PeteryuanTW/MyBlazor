@@ -6,7 +6,7 @@
 		public string machine;
 		public StartTimeAndEndTime t;
 
-		public WoInfo(string wo, string machine, int start, int end)
+		public WoInfo(string wo, string machine, DateTime start, DateTime end)
 		{
 			this.wo = wo;
 			this.machine = machine;

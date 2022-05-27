@@ -10,9 +10,9 @@
 	[Parameter]
 	public string wo { get; set; } = "";
 	[Parameter]
-	public int startTime { get; set; } = 0;
+	public DateTime startTime { get; set; } = DateTime.Now;
 	[Parameter]
-	public int endTime { get; set; } = 0;
+	public DateTime endTime { get; set; } = DateTime.Now;
 	[Parameter]
 	public float startPositionPercent{ get; set; } = 0.0f;
 	[Parameter]
@@ -22,6 +22,6 @@
 	protected override void OnParametersSet()
 	{
 		base.OnParametersSet();
-		toolTipsString = "start: " + startTime.ToString() + "\n" + "end: " + endTime.ToString();
+		toolTipsString = "start: " + startTime.ToString("MM/dd HH:mm") + "\n" + "end: " + endTime.ToString("MM/dd HH:mm");
 	}
 }

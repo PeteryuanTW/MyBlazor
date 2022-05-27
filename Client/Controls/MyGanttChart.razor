@@ -1,12 +1,18 @@
 ﻿@using System.Reflection
-<h2>start at: @minTime</h2>
+<h2>start at: @minTime, end at: @maxTime</h2>
 <table class="table is-bordered">
 	<tbody>
 		@foreach(WoInfo woInfo in woinfos)
 		{
 			<tr>
 				<td class="is-narrow border-0">
-					<button type="button" class="btn btn-outline-success" @onclick="AddWOClick">@woInfo.machine</button>
+					<button type="button" class="btn btn-outline-success" @onclick="@(()=>
+						{
+							showAddWODiakogue = true;
+							clickMachine = @woInfo.machine;
+							wo = @woInfo.wo;
+							t = @woInfo.t;
+						})">@woInfo.machine</button>
 				</td>
 				<td>
 					<MyGanttBar 
@@ -14,7 +20,8 @@
 						startPositionPercent=@GetStartPosition(@woInfo.t.startTime)
 					    widthPercent=@GetWidth(@woInfo.t.startTime, @woInfo.t.endTime)
 						startTime=@woInfo.t.startTime
-					    endTime=@woInfo.t.endTime>
+					    endTime=@woInfo.t.endTime
+					>
 					</MyGanttBar>
 				</td>
 			</tr>
@@ -22,7 +29,7 @@
 		<tr>
 			<td  class="border-0"></td>
 			<td  class="border-0">
-				<GanttTimeLine start="@minTime" end="@maxTime"></GanttTimeLine>
+				<GanttTimeLine start=@minTime end=@maxTime></GanttTimeLine>
 			</td>
 		</tr>
 	</tbody>
@@ -30,18 +37,16 @@
 
 @if (showAddWODiakogue)
 {
-	<AddWODialogue display="displayHandler"></AddWODialogue>
+	<AddWODialogue display="displayHandler" machine=@clickMachine wo=@wo t=@t ></AddWODialogue>
 }
 
 
 
 @code {
-
-	MemberInfo[] memberInfos = new MemberInfo[] { };
-	int minTime = 0;
-	int maxTime = 0;
-	List<int> allTimes = new List<int>();
-	int interval = 0;
+	DateTime minTime = DateTime.Now;
+	DateTime maxTime = DateTime.Now;
+	List<DateTime> allTimes = new List<DateTime>();
+	TimeSpan interval = TimeSpan.Zero;
 
 	bool showAddWODiakogue = false;
 	void displayHandler(bool display)
@@ -59,37 +64,34 @@
 				allTimes.Add(info.t.startTime);
 				allTimes.Add(info.t.endTime);
 			}
-			minTime = allTimes.Min();
-			maxTime = allTimes.Max();
+			DateTime tmp_min = allTimes.Min();
+			DateTime tmp_max = allTimes.Max();
+			minTime = new DateTime(tmp_min.Year, tmp_min.Month, tmp_min.Day, tmp_min.Hour, 00, 00, 000);
+			maxTime = new DateTime(tmp_max.Year, tmp_max.Month, tmp_max.Day, tmp_max.Hour + 1, 00, 00, 000);
 			interval = maxTime - minTime;
 		}
 	}
 
-	private float GetStartPosition(int startTime)
+	private float GetStartPosition(DateTime startTime)
 	{
 		float res = 0.0f;
-		int distance = startTime - minTime;
-		res = (float)distance / (float)interval;
-
+		TimeSpan distance = startTime - minTime;
+		res = (float)(distance / interval);
 		return res*100;
 	}
 
-	private float GetWidth(int startTime, int endTime)
+	private float GetWidth(DateTime startTime, DateTime endTime)
 	{
 		float res = 0.0f;
-		int thisInterval = 0;
-		thisInterval = endTime - startTime;
-		res = (float)thisInterval / (float)interval;
+		TimeSpan thisInterval = endTime - startTime;
+		res = (float)(thisInterval / interval);
 		return res*100;
-	}
-
-	private void AddWOClick()
-	{
-		showAddWODiakogue = true;
 	}
 
 	[Parameter]
 	public List<WoInfo> woinfos { get; set; } = new List<WoInfo>();
-	[Parameter]
-	public EventCallback<string> clickMachine{ get; set; }
+
+	public string clickMachine{ get; set; } = "";
+	public string wo { get; set; } = "";
+	public StartTimeAndEndTime t = new StartTimeAndEndTime(DateTime.Now, DateTime.Now);
 }
