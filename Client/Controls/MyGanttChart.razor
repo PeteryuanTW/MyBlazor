@@ -1,28 +1,39 @@
 ﻿@using System.Reflection
-<h2>start at: @minTime, end at: @maxTime</h2>
+<div class="columns">
+	<div class="column">
+		<button class="button is-info" style="align-items: center" @onclick="InitMachineData">Init Machine</button>
+	</div>
+	<div class="column">
+		<button class="button is-info" style="align-items: center" @onclick="InitWoInfo">Init Work Order</button>
+	</div>
+</div>
+start at: @minTime, end at: @maxTime
 <table class="table is-bordered">
 	<tbody>
-		@foreach(WoInfo woInfo in woinfos)
+		@foreach(MachineWOInfos machineWOInfo in machineWOInfos)
 		{
 			<tr>
 				<td class="is-narrow border-0">
-					<button type="button" class="btn btn-outline-success" @onclick="@(()=>
-						{
-							showAddWODiakogue = true;
-							clickMachine = @woInfo.machine;
-							wo = @woInfo.wo;
-							t = @woInfo.t;
-						})">@woInfo.machine</button>
+					<Machine machineName="@machineWOInfo.machineName" machineStatus="@machineWOInfo.machineStatus"></Machine>
 				</td>
 				<td>
-					<MyGanttBar 
-					    wo=@woInfo.wo
-						startPositionPercent=@GetStartPosition(@woInfo.t.startTime)
-					    widthPercent=@GetWidth(@woInfo.t.startTime, @woInfo.t.endTime)
-						startTime=@woInfo.t.startTime
-					    endTime=@woInfo.t.endTime
-					>
-					</MyGanttBar>
+					@if (tmp_margin != 0.0f || tmp_width!=0.0f)
+					{
+						tmp_margin = 0.0f;
+						tmp_width = 0.0f;
+					}
+					@foreach(WOAndTimes woAndTime in machineWOInfo.woAndTimes)
+					{
+						<MyGanttBar wo="@woAndTime.wo"
+						             startTime="@woAndTime.startAndEndTime.startTime"
+									 endTime="@woAndTime.startAndEndTime.endTime"
+									 startPositionPercent="@GetStartPosition(@woAndTime.startAndEndTime.startTime)"
+									 widthPercent="@GetWidth(@woAndTime.startAndEndTime.startTime, @woAndTime.startAndEndTime.endTime)"
+						>
+						</MyGanttBar>
+						tmp_margin = @GetStartPosition(@woAndTime.startAndEndTime.startTime);
+						tmp_width = @GetWidth(@woAndTime.startAndEndTime.startTime, @woAndTime.startAndEndTime.endTime);
+					}
 				</td>
 			</tr>
 		}
@@ -43,33 +54,89 @@
 
 
 @code {
-	DateTime minTime = DateTime.Now;
-	DateTime maxTime = DateTime.Now;
-	List<DateTime> allTimes = new List<DateTime>();
-	TimeSpan interval = TimeSpan.Zero;
+	[Parameter]
+	public List<MachineData> allMachineStatus { get; set; } = new List<MachineData>();//only machine
+	[Parameter]
+	public List<MachineWOInfos> machineWOInfos { get; set; } = new List<MachineWOInfos>();//group by machine
+	[Parameter]
+	public List<WoInfo> woinfos{ get; set; } = new List<WoInfo>();//detail
+
+	private float tmp_margin { get; set; } = 0.0f;
+	private float tmp_width { get; set; } = 0.0f;
+
+	//click event																		
+	private void InitMachineData()
+	{
+		allMachineStatus.Clear();
+		machineWOInfos.Clear();
+		AddMachineStatus(allMachineStatus, machineWOInfos, new MachineData("m1", 1));
+		AddMachineStatus(allMachineStatus, machineWOInfos, new MachineData("m2", 1));
+		AddMachineStatus(allMachineStatus, machineWOInfos, new MachineData("m3", 2));
+		AddMachineStatus(allMachineStatus, machineWOInfos, new MachineData("m4", 1));
+		AddMachineStatus(allMachineStatus, machineWOInfos, new MachineData("m3", 1));
+
+	}
+	private void AddMachineStatus(List<MachineData> allMachineStatus,List<MachineWOInfos> machineWOInfos, MachineData machineData)
+	{
+		if (!allMachineStatus.Exists(x => x.machineName == machineData.machineName))
+		{
+			allMachineStatus.Add(machineData);
+			machineWOInfos.Add(new MachineWOInfos(machineData.machineName,machineData.machineStatus ,new List<WOAndTimes>()));
+		}
+		else
+		{
+			Console.WriteLine("insert deplicated machine: " + machineData.machineName);
+		}
+	}
+
+	private void InitWoInfo()
+	{
+		woinfos.Clear();
+		woinfos.Add(new WoInfo("wo1", "m1", DateTime.Now, DateTime.Now.AddHours(3)));
+		woinfos.Add(new WoInfo("wo2", "m2", DateTime.Now.AddHours(0), DateTime.Now.AddHours(1)));
+		woinfos.Add(new WoInfo("wo4", "m3", DateTime.Now.AddHours(2), DateTime.Now.AddHours(3)));
+		woinfos.Add(new WoInfo("wo1", "m2", DateTime.Now.AddHours(2), DateTime.Now.AddHours(3)));
+
+		foreach (WoInfo woinfo in woinfos)
+		{
+			var targetMachine = machineWOInfos.Find(x=>x.machineName == woinfo.machine);
+			if (targetMachine != null)
+			{
+				targetMachine.woAndTimes.Add(new WOAndTimes(woinfo.wo, new StartTimeAndEndTime(woinfo.t.startTime, woinfo.t.endTime)));
+			}
+		}
+		GetMaxAndMinTimeInterval();
+	}
 
 	bool showAddWODiakogue = false;
 	void displayHandler(bool display)
 	{
 		showAddWODiakogue=display;
 	}
+	//calculate position function
+	#region
 
-	protected override void OnParametersSet()
+	DateTime minTime = DateTime.Now;
+	DateTime maxTime = DateTime.Now;
+	List<DateTime> allTimes = new List<DateTime>();
+	TimeSpan interval = TimeSpan.Zero;
+	private void GetMaxAndMinTimeInterval()
 	{
-		base.OnParametersSet();
-		if (woinfos != null && woinfos.Count > 0)
+		allTimes.Clear();
+		foreach (MachineWOInfos machineWOInfos in machineWOInfos)
 		{
-			foreach (WoInfo info in woinfos)
+			foreach (WOAndTimes woAndTime in machineWOInfos.woAndTimes)
 			{
-				allTimes.Add(info.t.startTime);
-				allTimes.Add(info.t.endTime);
+				allTimes.Add(woAndTime.startAndEndTime.startTime);
+				allTimes.Add(woAndTime.startAndEndTime.endTime);
+
 			}
-			DateTime tmp_min = allTimes.Min();
-			DateTime tmp_max = allTimes.Max();
-			minTime = new DateTime(tmp_min.Year, tmp_min.Month, tmp_min.Day, tmp_min.Hour, 00, 00, 000);
-			maxTime = new DateTime(tmp_max.Year, tmp_max.Month, tmp_max.Day, tmp_max.Hour + 1, 00, 00, 000);
-			interval = maxTime - minTime;
 		}
+		DateTime tmp_minTime = allTimes.Min();
+		DateTime tmp_maxTime = allTimes.Max();
+		minTime = new DateTime(tmp_minTime.Year, tmp_minTime.Month, tmp_minTime.Day, tmp_minTime.Hour, 0, 0, 0);
+		maxTime = new DateTime(tmp_maxTime.Year, tmp_maxTime.Month, tmp_maxTime.Day, tmp_maxTime.Hour+1, 0, 0, 0);
+		interval = maxTime - minTime;
 	}
 
 	private float GetStartPosition(DateTime startTime)
@@ -77,9 +144,10 @@
 		float res = 0.0f;
 		TimeSpan distance = startTime - minTime;
 		res = (float)(distance / interval);
-		return res*100;
+		//set position: relative for width is necessary
+		//so need to deduct the margin and width of pervious bar
+		return res*100-tmp_margin-tmp_width;
 	}
-
 	private float GetWidth(DateTime startTime, DateTime endTime)
 	{
 		float res = 0.0f;
@@ -87,11 +155,13 @@
 		res = (float)(thisInterval / interval);
 		return res*100;
 	}
+	#endregion
 
-	[Parameter]
-	public List<WoInfo> woinfos { get; set; } = new List<WoInfo>();
+	
 
 	public string clickMachine{ get; set; } = "";
 	public string wo { get; set; } = "";
 	public StartTimeAndEndTime t = new StartTimeAndEndTime(DateTime.Now, DateTime.Now);
+
+
 }

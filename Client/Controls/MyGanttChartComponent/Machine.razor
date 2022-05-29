@@ -1,0 +1,32 @@
+﻿<button class="button is-rounded @statusCss">@machineName</button>
+
+@code {
+    [Parameter]
+    public string machineName { get; set; } = "";
+    [Parameter]
+    public int machineStatus { get; set; } = 0;
+
+    string statusCss = "";
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        statusToCss(machineStatus);
+    }
+
+    
+    private void statusToCss(int statusBit)// green:available red:unavailable white:null
+    {
+        switch (statusBit)
+        {
+            case 1:
+                statusCss = "is-success";
+                break;
+            case 2:
+                statusCss = "is-danger";
+                break;
+            default:
+                statusCss = "";
+                break;
+        }
+    }
+}
