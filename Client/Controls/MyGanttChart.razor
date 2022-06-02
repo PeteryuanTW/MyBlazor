@@ -14,7 +14,10 @@ start at: @minTime, end at: @maxTime
 		{
 			<tr>
 				<td class="is-narrow border-0">
-					<Machine machineName="@machineWOInfo.machineName" machineStatus="@machineWOInfo.machineStatus"></Machine>
+					<Machine machineName="@machineWOInfo.machineName" machineStatus="@machineWOInfo.machineStatus" getClickMachine="machineClickHandler"></Machine>
+				</td>
+				<td class="is-narrow border-0">
+					<Capacity allWO="machineWOInfo.woAndTimes"></Capacity>
 				</td>
 				<td>
 					@if (tmp_margin != 0.0f || tmp_width!=0.0f)
@@ -24,7 +27,8 @@ start at: @minTime, end at: @maxTime
 					}
 					@foreach(WOAndTimes woAndTime in machineWOInfo.woAndTimes)
 					{
-						<MyGanttBar wo="@woAndTime.wo"
+						<MyGanttBar machineStatus = "@machineWOInfo.machineStatus"
+						             wo="@woAndTime.wo"
 						             startTime="@woAndTime.startAndEndTime.startTime"
 									 endTime="@woAndTime.startAndEndTime.endTime"
 									 startPositionPercent="@GetStartPosition(@woAndTime.startAndEndTime.startTime)"
@@ -39,6 +43,7 @@ start at: @minTime, end at: @maxTime
 		}
 		<tr>
 			<td  class="border-0"></td>
+			<td  class="border-0"></td>
 			<td  class="border-0">
 				<GanttTimeLine start=@minTime end=@maxTime></GanttTimeLine>
 			</td>
@@ -48,7 +53,7 @@ start at: @minTime, end at: @maxTime
 
 @if (showAddWODiakogue)
 {
-	<AddWODialogue display="displayHandler" machine=@clickMachine wo=@wo t=@t ></AddWODialogue>
+	<AddWODialogue display="displayHandler" EC_newWO="NewWOHandler" currentMachineInfos=@targetMachineInfos></AddWODialogue>
 }
 
 
@@ -57,7 +62,13 @@ start at: @minTime, end at: @maxTime
 	[Parameter]
 	public List<MachineData> allMachineStatus { get; set; } = new List<MachineData>();//only machine
 	[Parameter]
-	public List<MachineWOInfos> machineWOInfos { get; set; } = new List<MachineWOInfos>();//group by machine
+	public List<MachineWOInfos> machineWOInfos {
+		get;
+		set;
+	}
+		= new List<MachineWOInfos>();//group by machine
+	[Parameter]
+	public MachineWOInfos? targetMachineInfos { get; set; }
 	[Parameter]
 	public List<WoInfo> woinfos{ get; set; } = new List<WoInfo>();//detail
 
@@ -92,10 +103,10 @@ start at: @minTime, end at: @maxTime
 	private void InitWoInfo()
 	{
 		woinfos.Clear();
-		woinfos.Add(new WoInfo("wo1", "m1", DateTime.Now, DateTime.Now.AddHours(3)));
-		woinfos.Add(new WoInfo("wo2", "m2", DateTime.Now.AddHours(0), DateTime.Now.AddHours(1)));
-		woinfos.Add(new WoInfo("wo4", "m3", DateTime.Now.AddHours(2), DateTime.Now.AddHours(3)));
+		woinfos.Add(new WoInfo("wo1", "m1", DateTime.Now, DateTime.Now.AddHours(2)));
+		woinfos.Add(new WoInfo("wo4", "m3", DateTime.Now.AddHours(2), DateTime.Now.AddHours(3.5)));
 		woinfos.Add(new WoInfo("wo1", "m2", DateTime.Now.AddHours(2), DateTime.Now.AddHours(3)));
+		woinfos.Add(new WoInfo("wo2", "m2", DateTime.Now.AddHours(0), DateTime.Now.AddHours(1)));
 
 		foreach (WoInfo woinfo in woinfos)
 		{
@@ -105,6 +116,10 @@ start at: @minTime, end at: @maxTime
 				targetMachine.woAndTimes.Add(new WOAndTimes(woinfo.wo, new StartTimeAndEndTime(woinfo.t.startTime, woinfo.t.endTime)));
 			}
 		}
+		foreach(MachineWOInfos woList in machineWOInfos)
+		{
+			woList.Sort();
+		}
 		GetMaxAndMinTimeInterval();
 	}
 
@@ -113,11 +128,25 @@ start at: @minTime, end at: @maxTime
 	{
 		showAddWODiakogue=display;
 	}
+	void machineClickHandler(string targetMachine)
+	{
+		targetMachineInfos = machineWOInfos.Find(x => x.machineName == targetMachine);
+		showAddWODiakogue = true;
+	}
+
+	void NewWOHandler(MachineWOInfos newInfos)
+	{
+		machineWOInfos.Find(x => x.machineName == newInfos.machineName).woAndTimes = newInfos.woAndTimes;
+		foreach(MachineWOInfos woList in machineWOInfos)
+		{
+			woList.Sort();
+		}
+		GetMaxAndMinTimeInterval();
+	}
 	//calculate position function
 	#region
-
-	DateTime minTime = DateTime.Now;
-	DateTime maxTime = DateTime.Now;
+	public DateTime minTime { get; set; } = DateTime.Now;
+	public DateTime maxTime { get; set; } = DateTime.Now;
 	List<DateTime> allTimes = new List<DateTime>();
 	TimeSpan interval = TimeSpan.Zero;
 	private void GetMaxAndMinTimeInterval()
@@ -132,11 +161,15 @@ start at: @minTime, end at: @maxTime
 
 			}
 		}
-		DateTime tmp_minTime = allTimes.Min();
-		DateTime tmp_maxTime = allTimes.Max();
-		minTime = new DateTime(tmp_minTime.Year, tmp_minTime.Month, tmp_minTime.Day, tmp_minTime.Hour, 0, 0, 0);
-		maxTime = new DateTime(tmp_maxTime.Year, tmp_maxTime.Month, tmp_maxTime.Day, tmp_maxTime.Hour+1, 0, 0, 0);
-		interval = maxTime - minTime;
+		if (allTimes.Count != 0)
+		{
+			DateTime tmp_minTime = allTimes.Min();
+		    DateTime tmp_maxTime = allTimes.Max();
+		    minTime = new DateTime(tmp_minTime.Year, tmp_minTime.Month, tmp_minTime.Day, tmp_minTime.Hour, 0, 0, 0);
+		    maxTime = new DateTime(tmp_maxTime.Year, tmp_maxTime.Month, tmp_maxTime.Day, tmp_maxTime.Hour+1, 0, 0, 0);
+		    interval = maxTime - minTime;
+		}
+
 	}
 
 	private float GetStartPosition(DateTime startTime)
@@ -156,12 +189,6 @@ start at: @minTime, end at: @maxTime
 		return res*100;
 	}
 	#endregion
-
-	
-
-	public string clickMachine{ get; set; } = "";
-	public string wo { get; set; } = "";
-	public StartTimeAndEndTime t = new StartTimeAndEndTime(DateTime.Now, DateTime.Now);
 
 
 }

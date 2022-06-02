@@ -1,26 +1,35 @@
-﻿<div class="modal fade show" id="myModal" style="display:block; background-color: rgba(10,10,10,.8);" aria-modal="true" role="dialog">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
+﻿<div class="modal fade show" style="display:block; background-color: rgba(10,10,10,.8);" aria-modal="true" role="dialog">
+    <div class="modal-dialog modal-xl modal-dialog-centered" style="width:100%">
+        <div class="modal-content" style="width:auto">
             <div class="modal-header">
-                <h4 class="modal-title">Insert WorkOrder in: @machine</h4>
+                <button class="button is-medium is-static is-outlined @status">@currentMachineInfos?.machineName</button>
             </div>
             <div class="modal-body">
                 <table>
+                    <thead>New WorkOrder</thead>
+                    <tr>
+                        <td><input @bind="newWO"></td>
+                        <td><input type="datetime-local" @bind="start"></td>
+                        <td><input type="datetime-local" @bind="end"></td>
+                    </tr>
                     <thead>Current WorkOrder</thead>
                     <tr>
-                        <td>wo</td>
-                        <td>start</td>
-                        <td>end</td>
+                        <td style="font-weight:bold; text-align: center">wo</td>
+                        <td style="font-weight:bold; text-align: center">start</td>
+                        <td style="font-weight:bold; text-align: center">end</td>
                     </tr>
-                    <tr>
-                        <td>@wo</td>
-                        <td>@t.startTime</td>
-                        <td>@t.endTime</td>
-                    </tr>
+                    @foreach(WOAndTimes wo in currentMachineInfos.woAndTimes)
+                    {
+                        <tr style="text-align: center">
+                            <td>@wo.wo</td>
+                            <td>@wo.startAndEndTime.startTime</td>
+                            <td>@wo.startAndEndTime.endTime</td>
+                        </tr>
+                    }
                 </table>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-primary">Insert</button>
+                <button type="button" class="btn btn-primary" @onclick="AddNewWO">Insert</button>
                 <button type="button" class="btn btn-secondary" @onclick="@(()=>display.InvokeAsync(false))">Dispose</button>
             </div>
         </div>
@@ -31,9 +40,61 @@
     [Parameter]
     public EventCallback<bool> display { get; set; }
     [Parameter]
-    public string machine { get; set; } = "";
+    public EventCallback<MachineWOInfos> EC_newWO { get; set; }
     [Parameter]
-    public string wo { get; set; } = "";
+    public MachineWOInfos currentMachineInfos { get; set; }
     [Parameter]
-    public StartTimeAndEndTime t{ get; set; } = new StartTimeAndEndTime(DateTime.Now, DateTime.Now);
+    public string newWO { get; set; } = "";
+    [Parameter]
+    public DateTime start { get; set; } = DateTime.Now;
+    [Parameter]
+    public DateTime end { get; set; } = DateTime.Now;
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        machineStyle(currentMachineInfos.machineStatus);
+    }
+    string status = "";
+
+    private void machineStyle(int machineStatus)// green:available red:unavailable white:null
+    {
+        switch (machineStatus)
+        {
+            case 1:
+                status = "is-success";
+                break;
+            case 2:
+                status = "is-danger";
+                break;
+            default:
+                status = "";
+                break;
+        }
+    }
+
+    private void AddNewWO()
+    {
+        if (newWO == "")
+            return;
+        if (currentMachineInfos.woAndTimes.Exists(x => x.wo == newWO))
+            return;
+        if (start >=end  || start < DateTime.Now)
+            return;
+        if (end <= start || end < DateTime.Now)
+            return;
+        for (int i = 0; i < currentMachineInfos.woAndTimes.Count - 1; i++)
+        {
+            StartTimeAndEndTime startAndEnd = currentMachineInfos.woAndTimes[i].startAndEndTime;
+            if ((start > startAndEnd.startTime && start < startAndEnd.endTime) ||(end > startAndEnd.startTime && end < startAndEnd.endTime))
+            {
+                return;
+            }
+        }
+        WOAndTimes newWOAndTimes = new WOAndTimes(newWO, new StartTimeAndEndTime(start, end));
+        currentMachineInfos.woAndTimes.Add(newWOAndTimes);
+        EC_newWO.InvokeAsync(currentMachineInfos);
+
+    }
+
 }

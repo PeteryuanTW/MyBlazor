@@ -1,0 +1,46 @@
+﻿<button type="button" style="width:100%" class="button is-small is-outlined @cssString">@capacityRate%</button>
+@code {
+	[Parameter]
+	public List<WOAndTimes> allWO { get; set; } = new List<WOAndTimes>();
+	private string cssString = "";
+	private float capacityRate = 0.0f;
+	protected override void OnParametersSet()
+	{
+		base.OnParametersSet();
+		GetCapacityRate();
+
+	}
+
+	private void GetCapacityRate()
+	{
+		if (allWO.Count == 0)
+			return;
+		List<DateTime> allTimes = new List<DateTime>();
+		TimeSpan runTimes = TimeSpan.Zero;
+		TimeSpan totalTimes = TimeSpan.Zero;
+
+		foreach (WOAndTimes woandtime in allWO)
+		{
+			runTimes += woandtime.startAndEndTime.endTime - woandtime.startAndEndTime.startTime;
+			allTimes.Add(woandtime.startAndEndTime.endTime);
+			allTimes.Add(woandtime.startAndEndTime.startTime);
+		}
+		totalTimes = allTimes.Max() - allTimes.Min();
+		capacityRate = (float)(Math.Round((runTimes / totalTimes), 2)*100);
+
+		cssString = "";
+		if (capacityRate >= 80.0)
+		{
+			cssString = "is-success";
+		}
+		else if (capacityRate < 80 && capacityRate >= 50)
+		{
+			cssString = "is-warning";
+		}
+		else
+		{
+			cssString = "is-danger";
+		}
+	}
+
+}

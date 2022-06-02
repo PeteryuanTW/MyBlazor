@@ -1,4 +1,4 @@
-﻿<button type="button" class="btn btn-primary" data-toggle="tooltips" title="@toolTipsString" style="position:relative; margin-left:@startPositionPercent%; width:@widthPercent%">
+﻿<button class="button @statusStyle" data-toggle="tooltips" title="@toolTipsString" style="position:relative; margin-left:@startPositionPercent%; width:@widthPercent%">
 	@wo
 </button>
 
@@ -7,6 +7,8 @@
 
 
 @code {
+	[Parameter]
+	public int machineStatus { get; set;}
 	[Parameter]
 	public string wo { get; set; } = "";
 	[Parameter]
@@ -17,11 +19,33 @@
 	public float startPositionPercent{ get; set; } = 0.0f;
 	[Parameter]
 	public float widthPercent{ get; set; } = 0.0f;
-	public String toolTipsString { get; set; } = "";
+
+	public string toolTipsString { get; set; } = "";
+
+	private string statusStyle = "";
 
 	protected override void OnParametersSet()
 	{
 		base.OnParametersSet();
+		SetToolTips();
+		SetStatusStyle(machineStatus);
+	}
+	private void SetToolTips()
+	{
 		toolTipsString = "start: " + startTime.ToString("MM/dd HH:mm") + "\n" + "end: " + endTime.ToString("MM/dd HH:mm");
+	}
+	private void SetStatusStyle(int statusBit)
+	{
+		switch (statusBit)
+		{
+			case 1:
+				statusStyle = "is-primary";
+				break;
+			case 2:
+				statusStyle = "is-danger is-light";
+				break;
+			default:
+				break;
+		}
 	}
 }

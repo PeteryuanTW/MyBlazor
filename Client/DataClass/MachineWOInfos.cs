@@ -12,5 +12,10 @@
             this.machineStatus = machineStatus;
             this.woAndTimes = woAndTimes;
         }
+
+        public void Sort()
+        {
+            woAndTimes = woAndTimes.OrderBy(x => x.startAndEndTime.startTime).ToList();
+        }
     }
 }
