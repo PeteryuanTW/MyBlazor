@@ -62,11 +62,7 @@ start at: @minTime, end at: @maxTime
 	[Parameter]
 	public List<MachineData> allMachineStatus { get; set; } = new List<MachineData>();//only machine
 	[Parameter]
-	public List<MachineWOInfos> machineWOInfos {
-		get;
-		set;
-	}
-		= new List<MachineWOInfos>();//group by machine
+	public List<MachineWOInfos> machineWOInfos { get; set;}= new List<MachineWOInfos>();//group by machine
 	[Parameter]
 	public MachineWOInfos? targetMachineInfos { get; set; }
 	[Parameter]

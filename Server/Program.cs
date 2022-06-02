@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.ResponseCompression;
+using Blazored.Toast;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -6,6 +7,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
+builder.Services.AddServerSideBlazor();
+builder.Services.AddBlazoredToast();
 
 var app = builder.Build();
 

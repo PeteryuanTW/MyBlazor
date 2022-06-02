@@ -1,4 +1,6 @@
-﻿<div class="modal fade show" style="display:block; background-color: rgba(10,10,10,.8);" aria-modal="true" role="dialog">
+﻿
+
+<div class="modal fade show" style="display:block; background-color: rgba(10,10,10,.8);" aria-modal="true" role="dialog">
     <div class="modal-dialog modal-xl modal-dialog-centered" style="width:100%">
         <div class="modal-content" style="width:auto">
             <div class="modal-header">
@@ -35,6 +37,7 @@
         </div>
     </div>
 </div>
+
 
 @code{
     [Parameter]
@@ -76,7 +79,9 @@
     private void AddNewWO()
     {
         if (newWO == "")
+        {
             return;
+        }
         if (currentMachineInfos.woAndTimes.Exists(x => x.wo == newWO))
             return;
         if (start >=end  || start < DateTime.Now)
