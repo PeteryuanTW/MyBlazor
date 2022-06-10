@@ -1,0 +1,30 @@
+﻿<table class="table table-striped" style="width:auto">
+    <thead>
+		<tr>
+			<td>wo</td>
+		    @foreach(string machineType in machineTypes.Keys)
+			{
+				<td>@machineType</td>
+			}
+			<td>Due Time</td>
+		</tr>
+    </thead>
+	@foreach(WORequirements woRequirements in allWORequirements)
+	{
+		<tr>
+			<td>@woRequirements.wo</td>
+			@foreach(TimeSpan interval in woRequirements.processCost)
+			{
+				<td>@interval</td>
+			}
+			<td>@woRequirements.dueTime</td>
+		</tr>
+	}
+</table>
+
+@code {
+	[Parameter]
+	public Dictionary<string, int> machineTypes { get; set; } = new Dictionary<string, int>();
+	[Parameter]
+	public List<WORequirements> allWORequirements { get; set; } = new List<WORequirements>();
+}

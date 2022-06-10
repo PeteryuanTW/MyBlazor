@@ -1,11 +1,13 @@
 ﻿<button class="button is-rounded is-light @statusCss" @onclick="@(()=>{
     getClickMachine.InvokeAsync(machineName);
 })">
-@machineName</button>
+@machineName-@index</button>
 
 @code {
     [Parameter]
     public string machineName { get; set; } = "";
+    [Parameter]
+    public int index { get; set; } = 1;
     [Parameter]
     public int machineStatus { get; set; } = 0;
     [Parameter]

@@ -1,20 +1,11 @@
-﻿@using System.Reflection
-<div class="columns">
-	<div class="column">
-		<button class="button is-info" style="align-items: center" @onclick="InitMachineData">Init Machine</button>
-	</div>
-	<div class="column">
-		<button class="button is-info" style="align-items: center" @onclick="InitWoInfo">Init Work Order</button>
-	</div>
-</div>
-start at: @minTime, end at: @maxTime
+﻿start at: @minTime, end at: @maxTime
 <table class="table is-bordered">
 	<tbody>
 		@foreach(MachineWOInfos machineWOInfo in machineWOInfos)
 		{
 			<tr>
 				<td class="is-narrow border-0">
-					<Machine machineName="@machineWOInfo.machineName" machineStatus="@machineWOInfo.machineStatus" getClickMachine="machineClickHandler"></Machine>
+					<Machine machineName="@machineWOInfo.machineName" index="@machineWOInfo.index" machineStatus="@machineWOInfo.machineStatus" getClickMachine="machineClickHandler"></Machine>
 				</td>
 				<td class="is-narrow border-0">
 					<Capacity allWO="machineWOInfo.woAndTimes"></Capacity>
@@ -27,7 +18,7 @@ start at: @minTime, end at: @maxTime
 					}
 					@foreach(WOAndTimes woAndTime in machineWOInfo.woAndTimes)
 					{
-						<MyGanttBar machineStatus = "@machineWOInfo.machineStatus"
+						<MyGanttBar woStatus = "@woAndTime.woStatus"
 						             wo="@woAndTime.wo"
 						             startTime="@woAndTime.startAndEndTime.startTime"
 									 endTime="@woAndTime.startAndEndTime.endTime"
@@ -35,7 +26,7 @@ start at: @minTime, end at: @maxTime
 									 widthPercent="@GetWidth(@woAndTime.startAndEndTime.startTime, @woAndTime.startAndEndTime.endTime)"
 						>
 						</MyGanttBar>
-						tmp_margin = @GetStartPosition(@woAndTime.startAndEndTime.startTime);
+						tmp_margin += (@GetStartPosition(@woAndTime.startAndEndTime.startTime)+tmp_width);
 						tmp_width = @GetWidth(@woAndTime.startAndEndTime.startTime, @woAndTime.startAndEndTime.endTime);
 					}
 				</td>
@@ -67,49 +58,27 @@ start at: @minTime, end at: @maxTime
 	public MachineWOInfos? targetMachineInfos { get; set; }
 	[Parameter]
 	public List<WoInfo> woinfos{ get; set; } = new List<WoInfo>();//detail
+	public float tmp_margin { get; set; } = 0.0f;
+	public float tmp_width { get; set; } = 0.0f;
 
-	private float tmp_margin { get; set; } = 0.0f;
-	private float tmp_width { get; set; } = 0.0f;
-
-	//click event																		
-	private void InitMachineData()
+	protected override Task OnInitializedAsync()
 	{
-		allMachineStatus.Clear();
-		machineWOInfos.Clear();
-		AddMachineStatus(allMachineStatus, machineWOInfos, new MachineData("m1", 1));
-		AddMachineStatus(allMachineStatus, machineWOInfos, new MachineData("m2", 1));
-		AddMachineStatus(allMachineStatus, machineWOInfos, new MachineData("m3", 2));
-		AddMachineStatus(allMachineStatus, machineWOInfos, new MachineData("m4", 1));
-		AddMachineStatus(allMachineStatus, machineWOInfos, new MachineData("m3", 1));
-
-	}
-	private void AddMachineStatus(List<MachineData> allMachineStatus,List<MachineWOInfos> machineWOInfos, MachineData machineData)
-	{
-		if (!allMachineStatus.Exists(x => x.machineName == machineData.machineName))
+		for(int i = 0; i <allMachineStatus.Count; i++)
 		{
-			allMachineStatus.Add(machineData);
-			machineWOInfos.Add(new MachineWOInfos(machineData.machineName,machineData.machineStatus ,new List<WOAndTimes>()));
+			machineWOInfos.Add(new MachineWOInfos(allMachineStatus[i].machineName, allMachineStatus[i].index ,allMachineStatus[i].machineStatus, new List<WOAndTimes>()));
 		}
-		else
-		{
-			Console.WriteLine("insert deplicated machine: " + machineData.machineName);
-		}
+		InitWoInfo();
+		return base.OnInitializedAsync();
 	}
 
 	private void InitWoInfo()
 	{
-		woinfos.Clear();
-		woinfos.Add(new WoInfo("wo1", "m1", DateTime.Now, DateTime.Now.AddHours(2)));
-		woinfos.Add(new WoInfo("wo4", "m3", DateTime.Now.AddHours(2), DateTime.Now.AddHours(3.5)));
-		woinfos.Add(new WoInfo("wo1", "m2", DateTime.Now.AddHours(2), DateTime.Now.AddHours(3)));
-		woinfos.Add(new WoInfo("wo2", "m2", DateTime.Now.AddHours(0), DateTime.Now.AddHours(1)));
-
 		foreach (WoInfo woinfo in woinfos)
 		{
-			var targetMachine = machineWOInfos.Find(x=>x.machineName == woinfo.machine);
+			var targetMachine = machineWOInfos.Find(x=>x.machineName == woinfo.machine && x.index == woinfo.index);
 			if (targetMachine != null)
 			{
-				targetMachine.woAndTimes.Add(new WOAndTimes(woinfo.wo, new StartTimeAndEndTime(woinfo.t.startTime, woinfo.t.endTime)));
+				targetMachine.woAndTimes.Add(new WOAndTimes(woinfo.wo, 0, new StartTimeAndEndTime(woinfo.t.startTime, woinfo.t.endTime)));
 			}
 		}
 		foreach(MachineWOInfos woList in machineWOInfos)

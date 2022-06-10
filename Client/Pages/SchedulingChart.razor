@@ -1,0 +1,6 @@
+﻿@page "/schedulingChart"
+@inject StateContainer stateContainer
+<MyGanttChart allMachineStatus="@stateContainer.GetMachineData()" woinfos="@stateContainer.GetWoInfo()"></MyGanttChart>
+
+@code {
+}

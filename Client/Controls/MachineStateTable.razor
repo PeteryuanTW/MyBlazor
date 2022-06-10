@@ -1,0 +1,44 @@
+﻿@inject StateContainer stateContainer
+<table class="table table-striped" style="width:auto">
+    <thead>
+        <tr>
+            <td>name</td>
+            <td>index</td>
+            <td>state</td>
+        </tr>
+    </thead>
+	@foreach(MachineData machineData in machineDatas)
+	{
+		<tr>
+			<td>@machineData.machineName</td>
+            <td>@machineData.index</td>
+            <td>
+                <span class="@statusToIcon(machineData.machineStatus)"></span>
+            </td>
+		</tr>
+	}
+</table>
+
+@code {
+    [Parameter]
+    public List<MachineData> machineDatas { get; set; } = new List<MachineData>();
+
+    private string statusToIcon(int statusBit)// green:available red:unavailable white:null
+    {
+        string res = "";
+        switch (statusBit)
+        {
+            case 1:
+                res = "oi oi-media-play";
+                break;
+            case 2:
+                res = "oi oi-media-stop";
+                break;
+            default:
+                res = "oi oi-question-mark";
+                break;
+        }
+        return res;
+    }
+
+}

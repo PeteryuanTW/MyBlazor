@@ -1,10 +1,10 @@
-﻿
+﻿@inject IToastService toastService
 
-<div class="modal fade show" style="display:block; background-color: rgba(10,10,10,.8);" aria-modal="true" role="dialog">
+<div class="modal fade show" style="display:block; background-color: rgba(10,10,10,.4);" aria-modal="true" role="dialog">
     <div class="modal-dialog modal-xl modal-dialog-centered" style="width:100%">
         <div class="modal-content" style="width:auto">
             <div class="modal-header">
-                <button class="button is-medium is-static is-outlined @status">@currentMachineInfos?.machineName</button>
+                <button class="button is-medium is-static is-outlined @status">@currentMachineInfos.machineName</button>
             </div>
             <div class="modal-body">
                 <table>
@@ -32,12 +32,11 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-primary" @onclick="AddNewWO">Insert</button>
-                <button type="button" class="btn btn-secondary" @onclick="@(()=>display.InvokeAsync(false))">Dispose</button>
+                <button type="button" class="btn btn-secondary" @onclick="CloseDialogue">Dispose</button>
             </div>
         </div>
     </div>
 </div>
-
 
 @code{
     [Parameter]
@@ -80,26 +79,51 @@
     {
         if (newWO == "")
         {
+            toastService.ShowError("WO should not be empty");
+            CloseDialogue();
             return;
         }
         if (currentMachineInfos.woAndTimes.Exists(x => x.wo == newWO))
+        {
+            toastService.ShowError("WO should not be duplicate");
+            CloseDialogue();
             return;
-        if (start >=end  || start < DateTime.Now)
+        }
+        if (start >= end || start < DateTime.Now || end < DateTime.Now)
+        {
+            toastService.ShowError("please check time interval ");
+            CloseDialogue();
             return;
-        if (end <= start || end < DateTime.Now)
-            return;
-        for (int i = 0; i < currentMachineInfos.woAndTimes.Count - 1; i++)
+        }
+        WOAndTimes newWOAndTimes = new WOAndTimes(newWO, 1, new StartTimeAndEndTime(start, end));
+        for (int i = 0; i < currentMachineInfos.woAndTimes.Count; i++)
         {
             StartTimeAndEndTime startAndEnd = currentMachineInfos.woAndTimes[i].startAndEndTime;
-            if ((start > startAndEnd.startTime && start < startAndEnd.endTime) ||(end > startAndEnd.startTime && end < startAndEnd.endTime))
+            if ((start > startAndEnd.startTime && start < startAndEnd.endTime))//seperate original WO into two parts
+            {
+                WOAndTimes preWOAndTimes = new WOAndTimes(currentMachineInfos.woAndTimes[i].wo+"-1", 0, new StartTimeAndEndTime(startAndEnd.startTime, start));
+                WOAndTimes posWOAndTimes = new WOAndTimes(currentMachineInfos.woAndTimes[i].wo+"-2", 0, new StartTimeAndEndTime(end, end+(startAndEnd.endTime-start)));
+                currentMachineInfos.woAndTimes.RemoveAt(i);
+                currentMachineInfos.woAndTimes.Add(preWOAndTimes);
+                currentMachineInfos.woAndTimes.Add(posWOAndTimes);
+
+                break;
+            }
+            else if (start < startAndEnd.startTime && end > startAndEnd.startTime && end < startAndEnd.endTime)//pospone original WO
             {
                 return;
             }
         }
-        WOAndTimes newWOAndTimes = new WOAndTimes(newWO, new StartTimeAndEndTime(start, end));
         currentMachineInfos.woAndTimes.Add(newWOAndTimes);
         EC_newWO.InvokeAsync(currentMachineInfos);
+        CloseDialogue();
+        toastService.ShowSuccess("insert success");        
 
+    }
+
+    private void CloseDialogue()
+    {
+        display.InvokeAsync(false);
     }
 
 }

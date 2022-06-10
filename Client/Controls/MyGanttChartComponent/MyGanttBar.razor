@@ -1,4 +1,4 @@
-﻿<button class="button @statusStyle" data-toggle="tooltips" title="@toolTipsString" style="position:relative; margin-left:@startPositionPercent%; width:@widthPercent%">
+﻿<button class="button is-outlined @statusStyle" data-toggle="tooltips" title="@toolTipsString" style="position:relative; margin-left:@startPositionPercent%; width:@widthPercent%">
 	@wo
 </button>
 
@@ -8,7 +8,7 @@
 
 @code {
 	[Parameter]
-	public int machineStatus { get; set;}
+	public int woStatus { get; set;}
 	[Parameter]
 	public string wo { get; set; } = "";
 	[Parameter]
@@ -28,7 +28,7 @@
 	{
 		base.OnParametersSet();
 		SetToolTips();
-		SetStatusStyle(machineStatus);
+		SetStatusStyle(woStatus);
 	}
 	private void SetToolTips()
 	{
@@ -38,10 +38,10 @@
 	{
 		switch (statusBit)
 		{
-			case 1:
-				statusStyle = "is-primary";
+			case 0:
+				statusStyle = "is-primary is-light";
 				break;
-			case 2:
+			case 1:
 				statusStyle = "is-danger is-light";
 				break;
 			default:

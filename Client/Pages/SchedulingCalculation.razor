@@ -1,0 +1,158 @@
+﻿@page "/schedulingCalculation"
+@inject StateContainer stateContainer
+
+<button @onclick="(()=>{
+    InitMachineSchedule();
+	RandomAssignToMachine();
+	ToFlatSchedule();
+    stateContainer.ClearWoInfo();
+	FlatScheduleToInterval();
+})"></button>
+
+@code {
+	private List<WORequirements> allWORequirements = new List<WORequirements>();
+	private Dictionary<string, int> machineTypesAndCount = new Dictionary<string, int>();
+	private List<List<int>> machineSchedule = new List<List<int>>();
+	private List<List<string>> flatSchedule = new List<List<string>>();
+	private List<List<DateTime>> endTimes = new List<List<DateTime>>();
+	protected override void OnInitialized()
+	{
+		GetWORequirements();
+		InitMachineSchedule();
+		RandomAssignToMachine();
+		ToFlatSchedule();
+		FlatScheduleToInterval();
+		base.OnInitialized();
+	}
+	private void GetWORequirements()
+	{
+		allWORequirements = stateContainer.GetWORequirements();
+	}
+	private void InitMachineSchedule()
+	{
+		machineSchedule = new List<List<int>>();
+		machineTypesAndCount = stateContainer.GetMachineTypeCount();
+		for (int i = 0; i < machineTypesAndCount.Count; i++)
+		{
+			machineSchedule.Add(new List<int>());
+			for (int j = 0; j < machineTypesAndCount.ElementAt(i).Value; j++)
+			{
+				machineSchedule[i].Add(0);
+			}
+		}
+
+	}
+	private void RandomAssignToMachine()
+	{
+		foreach (List<int> eachType in machineSchedule)
+		{
+			RandonPickMachine(eachType);
+		}
+	}
+	private void RandonPickMachine(List<int> input)
+	{
+		Random r = new Random();
+		int pickIndex = r.Next(0, input.Count);
+		for (int i = 0; i < input.Count; i++)
+		{
+			if (i == pickIndex)
+			{
+				input[i] = 1;
+			}
+			else
+			{
+				input[i] = 0;
+			}
+		}
+	}
+
+	private void ToFlatSchedule()
+	{
+		flatSchedule = new List<List<string>>();
+		for (int i = 0; i < allWORequirements.Count; i++)
+		{
+			flatSchedule.Add(new List<string>());
+			flatSchedule[i].Add(allWORequirements[i].wo);
+
+			for (int j = 0; j < allWORequirements[i].processCost.Count; j++)
+			{
+				InitMachineSchedule();
+		        RandomAssignToMachine();
+				for (int k = 0; k < machineSchedule[j].Count; k++)
+				{
+					if (machineSchedule[j][k] == 0)
+					{
+						flatSchedule[i].Add("0");
+					}
+					else if (machineSchedule[j][k] == 1)
+					{
+						flatSchedule[i].Add(allWORequirements[i].processCost[j].ToString());
+					}
+				}
+			}
+
+			flatSchedule[i].Add(allWORequirements[i].dueTime.ToString());
+		}
+	}
+
+	private void FlatScheduleToInterval()
+	{
+		DateTime scheduleStartTime = DateTime.Now;
+		//init endtime list without wo and duetime
+		int rows = flatSchedule.Count();
+		int columns = flatSchedule[0].Count - 2;
+		endTimes = new List<List<DateTime>>();
+		List<WoInfo> woInfos = new List<WoInfo>();
+		for (int i = 0; i < rows; i++)
+		{
+			List<DateTime> tmpRow = new List<DateTime>();
+			for (int j = 0; j < columns; j++)
+			{
+				tmpRow.Add(scheduleStartTime);
+			}
+			endTimes.Add(tmpRow);
+		}
+		//end init
+		for (int i = 0; i < flatSchedule.Count; i++)
+		{
+			for (int j = 1; j < flatSchedule[i].Count - 1; j++)
+			{
+				if (flatSchedule[i][j] != "0")
+				{
+					DateTime start = GetEndTimeFrom(scheduleStartTime, i, j, 0) > GetEndTimeFrom(scheduleStartTime, i, j, 1)? GetEndTimeFrom(scheduleStartTime, i, j, 0):GetEndTimeFrom(scheduleStartTime, i, j, 1);
+					DateTime end = start + TimeSpan.Parse(flatSchedule[i][j]);
+					endTimes[i][j-1] = end;
+					stateContainer.AddWoInfo(new WoInfo(flatSchedule[i][0], stateContainer.GetMachineData()[j-1].machineName, stateContainer.GetMachineData()[j-1].index ,start, end));
+				}
+			}
+		}
+
+	}
+	private DateTime GetEndTimeFrom(DateTime baseLine, int row, int col, int type)//0:last process, 1:machine
+	{
+		DateTime res = baseLine;
+		if (type == 0)
+		{
+			for (int i = col - 1; i >= 0; i--)
+			{
+				if (endTimes[row][i] > baseLine)
+				{
+					res = endTimes[row][i];
+					break;
+				}
+			}
+		}
+		else if (type == 1)
+		{
+			for (int i = row; i >= 0; i--)
+			{
+				if (endTimes[i][col-1] > baseLine)
+				{
+					res = endTimes[i][col-1];
+					break;
+				}
+			}
+		}
+		return res;
+	}
+}
