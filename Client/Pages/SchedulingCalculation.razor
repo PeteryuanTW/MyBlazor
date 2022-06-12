@@ -2,6 +2,7 @@
 @inject StateContainer stateContainer
 
 <button @onclick="(()=>{
+    CopyRequirements();
     InitMachineSchedule();
 	RandomAssignToMachine();
 	ToFlatSchedule();
@@ -10,24 +11,43 @@
 })"></button>
 
 @code {
+	//algo configs
+	private int times = 1000;
+	//static data
 	private List<WORequirements> allWORequirements = new List<WORequirements>();
 	private Dictionary<string, int> machineTypesAndCount = new Dictionary<string, int>();
+	//change when generate new gene
+	private List<WORequirements> tmp_allWORequirements = new List<WORequirements>();
 	private List<List<int>> machineSchedule = new List<List<int>>();
 	private List<List<string>> flatSchedule = new List<List<string>>();
 	private List<List<DateTime>> endTimes = new List<List<DateTime>>();
 	protected override void OnInitialized()
 	{
 		GetWORequirements();
-		InitMachineSchedule();
-		RandomAssignToMachine();
-		ToFlatSchedule();
-		FlatScheduleToInterval();
+		CopyRequirements();
 		base.OnInitialized();
 	}
 	private void GetWORequirements()
 	{
 		allWORequirements = stateContainer.GetWORequirements();
 	}
+	private void CopyRequirements()
+	{
+		tmp_allWORequirements = new List<WORequirements>(allWORequirements);
+		Shuffle(allWORequirements, 0, allWORequirements.Count - 1);
+	}
+	private void Shuffle<T>(IList<T> array, int first, int last)
+    {
+		Random r = new Random();
+        for (int n = last; n >= last;)
+        {
+            int k = r.Next(n);
+            --n;
+            T temp = array[n+first];
+            array[n + first] = array[k + first];
+             array[k + first] = temp;
+        }
+    }
 	private void InitMachineSchedule()
 	{
 		machineSchedule = new List<List<int>>();
@@ -69,12 +89,12 @@
 	private void ToFlatSchedule()
 	{
 		flatSchedule = new List<List<string>>();
-		for (int i = 0; i < allWORequirements.Count; i++)
+		for (int i = 0; i < tmp_allWORequirements.Count; i++)
 		{
 			flatSchedule.Add(new List<string>());
-			flatSchedule[i].Add(allWORequirements[i].wo);
+			flatSchedule[i].Add(tmp_allWORequirements[i].wo);
 
-			for (int j = 0; j < allWORequirements[i].processCost.Count; j++)
+			for (int j = 0; j < tmp_allWORequirements[i].processCost.Count; j++)
 			{
 				InitMachineSchedule();
 		        RandomAssignToMachine();
@@ -86,12 +106,12 @@
 					}
 					else if (machineSchedule[j][k] == 1)
 					{
-						flatSchedule[i].Add(allWORequirements[i].processCost[j].ToString());
+						flatSchedule[i].Add(tmp_allWORequirements[i].processCost[j].ToString());
 					}
 				}
 			}
 
-			flatSchedule[i].Add(allWORequirements[i].dueTime.ToString());
+			flatSchedule[i].Add(tmp_allWORequirements[i].dueTime.ToString());
 		}
 	}
 
