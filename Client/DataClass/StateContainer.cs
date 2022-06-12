@@ -1,6 +1,15 @@
 ﻿using MyBlazor.Client.DataClass;
 public class StateContainer
 {
+    private TimeSpan bestDueTime = TimeSpan.Zero;
+    public void SetBsetDueTime(TimeSpan bestDueTime)
+    {
+        this.bestDueTime = bestDueTime;
+    }
+    public TimeSpan GetBsetDueTime()
+    {
+        return bestDueTime;
+    }
     #region machine data
     private List<MachineData> allMachineStatus = new List<MachineData>() 
     {
@@ -45,11 +54,11 @@ public class StateContainer
     #region wo requirements
     private List<WORequirements> allWORequirements = new List<WORequirements>()
     {
-        new WORequirements("wo1", new List<TimeSpan>{new TimeSpan(0, 10 ,0),  new TimeSpan(0, 20 ,0), new TimeSpan(0, 30 ,0),}, DateTime.Now.AddMinutes(10)),
-        new WORequirements("wo2", new List<TimeSpan>{new TimeSpan(0, 20 ,0),  new TimeSpan(0, 50 ,0), new TimeSpan(0, 15 ,0),}, DateTime.Now.AddMinutes(20)),
-        new WORequirements("wo3", new List<TimeSpan>{new TimeSpan(0, 5 ,0),  new TimeSpan(0, 30 ,0), new TimeSpan(0, 10 ,0),}, DateTime.Now.AddMinutes(15)),
-        new WORequirements("wo4", new List<TimeSpan>{new TimeSpan(0, 30 ,0),  new TimeSpan(0, 10 ,0), new TimeSpan(0, 5 ,0),}, DateTime.Now.AddMinutes(50)),
-        new WORequirements("wo5", new List<TimeSpan>{new TimeSpan(0, 20 ,0),  new TimeSpan(0, 10 ,0), new TimeSpan(0, 50 ,0),}, DateTime.Now.AddMinutes(100)),
+        new WORequirements("wo1", new List<TimeSpan>{new TimeSpan(0, 10 ,0),  new TimeSpan(0, 20 ,0), new TimeSpan(0, 30 ,0),}, DateTime.Now.AddMinutes(0)),
+        new WORequirements("wo2", new List<TimeSpan>{new TimeSpan(0, 20 ,0),  new TimeSpan(0, 50 ,0), new TimeSpan(0, 15 ,0),}, DateTime.Now.AddMinutes(0)),
+        new WORequirements("wo3", new List<TimeSpan>{new TimeSpan(0, 5 ,0),  new TimeSpan(0, 30 ,0), new TimeSpan(0, 10 ,0),}, DateTime.Now.AddMinutes(0)),
+        new WORequirements("wo4", new List<TimeSpan>{new TimeSpan(0, 30 ,0),  new TimeSpan(0, 10 ,0), new TimeSpan(0, 5 ,0),}, DateTime.Now.AddMinutes(0)),
+        new WORequirements("wo5", new List<TimeSpan>{new TimeSpan(0, 20 ,0),  new TimeSpan(0, 10 ,0), new TimeSpan(0, 50 ,0),}, DateTime.Now.AddMinutes(0)),
     };
     public List<WORequirements> GetWORequirements()
     {
@@ -81,6 +90,12 @@ public class StateContainer
         {
 
         }
+    }
+
+    public void SetWOInfos(List<WoInfo> newRecord)
+    {
+        ClearWoInfo();
+        woinfos = newRecord;
     }
 
     public void ClearWoInfo()

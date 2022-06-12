@@ -1,32 +1,46 @@
 ﻿@page "/schedulingCalculation"
 @inject StateContainer stateContainer
 
-<button @onclick="(()=>{
-    CopyRequirements();
-    InitMachineSchedule();
-	RandomAssignToMachine();
-	ToFlatSchedule();
-    stateContainer.ClearWoInfo();
-	FlatScheduleToInterval();
-})"></button>
+<button type="button" class="btn btn-warning" @onclick="(()=>{
+    StartGA();
+})">Start Algo</button>
 
 @code {
 	//algo configs
-	private int times = 1000;
+	private int times = 10000;
 	//static data
 	private List<WORequirements> allWORequirements = new List<WORequirements>();
 	private Dictionary<string, int> machineTypesAndCount = new Dictionary<string, int>();
+	//best record
+	private List<WoInfo> bestWOInfos = new List<WoInfo>();
+	private TimeSpan bestDueTime = TimeSpan.MaxValue;
 	//change when generate new gene
 	private List<WORequirements> tmp_allWORequirements = new List<WORequirements>();
 	private List<List<int>> machineSchedule = new List<List<int>>();
 	private List<List<string>> flatSchedule = new List<List<string>>();
+	private List<WoInfo> tmpWOInfos = new List<WoInfo>();
 	private List<List<DateTime>> endTimes = new List<List<DateTime>>();
 	protected override void OnInitialized()
 	{
 		GetWORequirements();
-		CopyRequirements();
 		base.OnInitialized();
 	}
+
+	private void StartGA()
+	{
+		for (int i = 0; i < times; i++)
+		{
+			CopyRequirements();
+			InitMachineSchedule();
+			RandomAssignToMachine();
+			ToFlatSchedule();
+			FlatScheduleToInterval();
+			Console.WriteLine(i);
+		}
+		stateContainer.SetWOInfos(bestWOInfos);
+		stateContainer.SetBsetDueTime(bestDueTime);
+	}
+
 	private void GetWORequirements()
 	{
 		allWORequirements = stateContainer.GetWORequirements();
@@ -37,17 +51,17 @@
 		Shuffle(allWORequirements, 0, allWORequirements.Count - 1);
 	}
 	private void Shuffle<T>(IList<T> array, int first, int last)
-    {
+	{
 		Random r = new Random();
-        for (int n = last; n >= last;)
-        {
-            int k = r.Next(n);
-            --n;
-            T temp = array[n+first];
-            array[n + first] = array[k + first];
-             array[k + first] = temp;
-        }
-    }
+		for (int n = last; n >= last;)
+		{
+			int k = r.Next(n);
+			--n;
+			T temp = array[n+first];
+			array[n + first] = array[k + first];
+			array[k + first] = temp;
+		}
+	}
 	private void InitMachineSchedule()
 	{
 		machineSchedule = new List<List<int>>();
@@ -64,6 +78,8 @@
 	}
 	private void RandomAssignToMachine()
 	{
+		Random r = new Random();
+
 		foreach (List<int> eachType in machineSchedule)
 		{
 			RandonPickMachine(eachType);
@@ -97,7 +113,7 @@
 			for (int j = 0; j < tmp_allWORequirements[i].processCost.Count; j++)
 			{
 				InitMachineSchedule();
-		        RandomAssignToMachine();
+				RandomAssignToMachine();
 				for (int k = 0; k < machineSchedule[j].Count; k++)
 				{
 					if (machineSchedule[j][k] == 0)
@@ -122,7 +138,7 @@
 		int rows = flatSchedule.Count();
 		int columns = flatSchedule[0].Count - 2;
 		endTimes = new List<List<DateTime>>();
-		List<WoInfo> woInfos = new List<WoInfo>();
+		tmpWOInfos = new List<WoInfo>();
 		for (int i = 0; i < rows; i++)
 		{
 			List<DateTime> tmpRow = new List<DateTime>();
@@ -142,12 +158,29 @@
 					DateTime start = GetEndTimeFrom(scheduleStartTime, i, j, 0) > GetEndTimeFrom(scheduleStartTime, i, j, 1)? GetEndTimeFrom(scheduleStartTime, i, j, 0):GetEndTimeFrom(scheduleStartTime, i, j, 1);
 					DateTime end = start + TimeSpan.Parse(flatSchedule[i][j]);
 					endTimes[i][j-1] = end;
-					stateContainer.AddWoInfo(new WoInfo(flatSchedule[i][0], stateContainer.GetMachineData()[j-1].machineName, stateContainer.GetMachineData()[j-1].index ,start, end));
+					tmpWOInfos.Add(new WoInfo(flatSchedule[i][0], stateContainer.GetMachineData()[j-1].machineName, stateContainer.GetMachineData()[j-1].index ,start, end));
 				}
 			}
 		}
 
+		if (GetDueTime(endTimes) < bestDueTime)
+		{
+			bestWOInfos = tmpWOInfos;
+			bestDueTime = GetDueTime(endTimes);
+		}
+
 	}
+
+	private TimeSpan GetDueTime(List<List<DateTime>> endTimes)
+	{
+		TimeSpan ts = TimeSpan.Zero;
+		for (int i = 0; i< tmp_allWORequirements.Count; i++)
+		{
+            ts += (tmp_allWORequirements[i].dueTime - endTimes[i].Max());
+		}
+		return ts;
+	}
+
 	private DateTime GetEndTimeFrom(DateTime baseLine, int row, int col, int type)//0:last process, 1:machine
 	{
 		DateTime res = baseLine;
