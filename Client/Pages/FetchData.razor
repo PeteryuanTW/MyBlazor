@@ -1,4 +1,4 @@
-﻿@page "/fetchdata"
+﻿@page "/addRawData"
 @using MyBlazor.Shared
 @inject HttpClient Http
 
@@ -7,7 +7,7 @@
 <h1>Weather forecast</h1>
 
 <p>This component demonstrates fetching data from the server.</p>
-
+<h3>@a</h3>
 @if (forecasts == null)
 {
     <p><em>Loading...</em></p>
@@ -39,6 +39,8 @@ else
 
 @code {
     private WeatherForecast[]? forecasts;
+
+    private int a= 0;
 
     protected override async Task OnInitializedAsync()
     {

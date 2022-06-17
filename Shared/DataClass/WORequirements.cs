@@ -1,4 +1,4 @@
-﻿namespace MyBlazor.Client.DataClass
+﻿namespace MyBlazor.Shared.DataClass
 {
     public class WORequirements
     {

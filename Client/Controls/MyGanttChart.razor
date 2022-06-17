@@ -1,4 +1,5 @@
-﻿<div>start at: @minTime, end at: @maxTime</div>
+﻿@using MyBlazor.Shared.DataClass
+<div>start at: @minTime, end at: @maxTime</div>
 <div>minima duetime: @bestDueTime</div>
 <table class="table is-bordered">
 	<tbody>
@@ -104,7 +105,7 @@
 
 	void NewWOHandler(MachineWOInfos newInfos)
 	{
-		machineWOInfos.Find(x => x.machineName == newInfos.machineName).woAndTimes = newInfos.woAndTimes;
+		machineWOInfos.Find(x => x.machineName == newInfos.machineName && x.index == newInfos.index).woAndTimes = newInfos.woAndTimes;
 		foreach(MachineWOInfos woList in machineWOInfos)
 		{
 			woList.Sort();

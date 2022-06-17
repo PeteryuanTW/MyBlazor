@@ -1,4 +1,5 @@
-﻿<button type="button" style="width:100%" class="button is-small is-outlined @cssString">@capacityRate%</button>
+﻿@using MyBlazor.Shared.DataClass
+<button type="button" style="width:100%" class="button is-small is-outlined @cssString">@capacityRate%</button>
 @code {
 	[Parameter]
 	public List<WOAndTimes> allWO { get; set; } = new List<WOAndTimes>();

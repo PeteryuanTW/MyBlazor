@@ -9,7 +9,6 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddBlazoredToast();
-builder.Services.AddSingleton<StateContainer>();
 
 var app = builder.Build();
 
