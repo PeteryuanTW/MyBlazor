@@ -1,10 +1,49 @@
 ﻿using MyBlazor.Shared.DataClass;
 public class StateContainer
 {
+    //GA UI
+    public void UIStartGA()
+    {
+        GAbtnType = "is-danger  is-loading";
+        GAbtnstatusCss = "title=\"Disabled button\" disabled";
+        NotifyStateChanged();
+    }
+
+    public void UIFinishGA()
+    {
+        GAbtnType = "is-primary";
+        GAbtnstatusCss = "";
+        NotifyStateChanged();
+        //Console.WriteLine("...");
+    }
+    private string GAbtnType = "is-primary";
+    public string GetGAbtnType()
+    {
+        return GAbtnType;
+    }
+    private string GAbtnstatusCss = "";
+    public string GetGAbtnstatusCss()
+    {
+        return GAbtnstatusCss;
+    }
+    //algo configs
+    private int iteratives = 1000;
+    public int a = 0;
+    public void A()
+    {
+        a++;
+        NotifyStateChanged();
+    }
+    public int GetIteratives()
+    {
+        return iteratives;
+    }
+
     private TimeSpan bestDueTime = TimeSpan.Zero;
     public void SetBsetDueTime(TimeSpan bestDueTime)
     {
         this.bestDueTime = bestDueTime;
+        NotifyStateChanged();
     }
     public TimeSpan GetBsetDueTime()
     {
@@ -74,10 +113,12 @@ public class StateContainer
 
     #endregion
     private List<WoInfo> woinfos = new List<WoInfo>();
+    #region WO setting
     public List<WoInfo> GetWoInfo()
     {
         return woinfos ?? new List<WoInfo>();
     }
+    
     public void AddWoInfo(WoInfo woInfo)
     {
         if (!woinfos.Exists(x => x.machine == woInfo.machine && x.wo == woInfo.wo))
@@ -95,21 +136,15 @@ public class StateContainer
     {
         ClearWoInfo();
         woinfos = newRecord;
-    }
-
-
-    public void Test()
-    {
-        for (int i = 0; i < 100000; i++)
-        {
-            Console.WriteLine(i);
-        }
+        NotifyStateChanged();
     }
 
     public void ClearWoInfo()
     {
         woinfos = new List<WoInfo>();
+        NotifyStateChanged();
     }
+    #endregion
     public event Action? OnChange;
     private void NotifyStateChanged() => OnChange?.Invoke();
     }

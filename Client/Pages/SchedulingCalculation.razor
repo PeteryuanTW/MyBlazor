@@ -1,18 +1,15 @@
 ﻿@page "/schedulingCalculation"
+@using MyBlazor.Shared
 @using MyBlazor.Shared.DataClass
-@using MyBlazor.Client.Service
 @inject HttpClient httpClient
 @inject StateContainer stateContainer
 
-<button type="button" class="btn btn-warning" @onclick="@(()=>{
-    
-})">@a</button>
+<button class="button @stateContainer.GetGAbtnType() @stateContainer.GetGAbtnstatusCss()" @onclick="AAA">Start Genetic Algo.</button>
+@stateContainer.a
 
 @code {
-	//algo configs
-	private int times = 10000;
-	private int a = 0 ;
-	//static data
+
+																								//static data
 	private List<WORequirements> allWORequirements = new List<WORequirements>();
 	private Dictionary<string, int> machineTypesAndCount = new Dictionary<string, int>();
 	//best record
@@ -30,26 +27,27 @@
 		base.OnInitialized();
 	}
 
-	private async Task A()
+	private async Task AAA()
 	{
-		await Task.Delay(new TimeSpan(0, 0, 5));
-		a += 1;
+		var a = await httpClient.GetFromJsonAsync<WeatherForecast[]>("AAA");
 	}
 
-	private void StartGA()
+	private async Task StartGA()
 	{
-		for (int i = 0; i < times; i++)
+		stateContainer.UIStartGA();
+		for (int i = 0; i < stateContainer.GetIteratives(); i++)
 		{
 			CopyRequirements();
 			InitMachineSchedule();
 			RandomAssignToMachine();
 			ToFlatSchedule();
 			FlatScheduleToInterval();
-			//a++;
-			Console.WriteLine(i);
+			stateContainer.A();
+			await Task.Delay(10);
 		}
 		stateContainer.SetWOInfos(bestWOInfos);
 		stateContainer.SetBsetDueTime(bestDueTime);
+		stateContainer.UIFinishGA();
 	}
 
 	private void GetWORequirements()

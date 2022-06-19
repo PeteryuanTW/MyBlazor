@@ -22,10 +22,6 @@ namespace MyBlazor.Server.Controllers
         [HttpGet]
         public IEnumerable<WeatherForecast> Get()
         {
-            for (int i = 0; i < 100000; i++)
-            {
-                Console.WriteLine(i);
-            }
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {
                 Date = DateTime.Now.AddDays(index),
