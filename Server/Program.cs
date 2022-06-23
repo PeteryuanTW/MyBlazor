@@ -1,5 +1,6 @@
-using Microsoft.AspNetCore.ResponseCompression;
+using MyBlazor.Server.Controllers;
 using Blazored.Toast;
+using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +10,8 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddBlazoredToast();
+//builder.Services.AddSingleton<GAController>();
+//builder.Services.AddHostedService(sp => sp.GetRequiredService<GAController>());
 
 var app = builder.Build();
 

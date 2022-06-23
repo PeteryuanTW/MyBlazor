@@ -1,15 +1,68 @@
 ﻿@page "/schedulingCalculation"
 @using MyBlazor.Shared
 @using MyBlazor.Shared.DataClass
-@inject HttpClient httpClient
 @inject StateContainer stateContainer
-
-<button class="button @stateContainer.GetGAbtnType() @stateContainer.GetGAbtnstatusCss()" @onclick="AAA">Start Genetic Algo.</button>
-@stateContainer.a
+@inject IToastService toastService
+@inject NavigationManager navigationManager
+<div class="container">
+	<div class="row" style="align-items:center">
+        <div class="col-auto">
+            <button class="button @GABtnCss" @onclick="StartGA">Start Genetic Algo.</button>
+        </div>
+        <div class="col">
+			<span style="position:absolute; left:50%; font-size:12px">@round/@stateContainer.GetIterations()</span>
+            <progress class="progress is-warning" value=@round max="@stateContainer.GetIterations()"></progress>
+        </div>
+  </div>
+</div>
+<br>
+<table class = "table table-striped table-sm" style="width:auto">
+	<thead class="thead-light">
+			<tr>
+				<th>Visualize</th>
+				<th>Log Time ID</th>
+				<th>Duetime</th>
+				<th>Job(s) Count</th>
+			</tr>
+	</thead>
+	@foreach(SchedulingHistory schedulingHistory in stateContainer.GetSchedulingData())
+	{
+		<tr>
+			<td>
+				<button class="button is-primary is-rounded is-light" style="border:none" @onclick="(()=>
+					{
+						SchedulingHistory target = stateContainer.GetSchedulingHistoryByDateTimeString(schedulingHistory.dataTimeID);
+						stateContainer.SetCurrentScheduling(target);
+						GoToChart();
+					})">
+					<i class="oi oi-bar-chart"></i>
+				</button>
+			</td>
+			<td>
+				@schedulingHistory.dataTimeID
+			</td>
+			<td>
+				@if (schedulingHistory.dueTime >= TimeSpan.Zero)
+	            {
+		            <label style="color:lawngreen">No duetime in this scheduling</label>
+	            }
+	            else
+	            {
+		            <label style="color:palevioletred">@schedulingHistory.dueTime.ToString("h'h 'm'm 's's'")</label>
+	            }
+			</td>
+			<td>
+				@schedulingHistory.woInfos.Count()
+			</td>
+		</tr>
+	}
+</table>
 
 @code {
+	private int round;
+	private string GABtnCss = "";
 
-																								//static data
+	//static data
 	private List<WORequirements> allWORequirements = new List<WORequirements>();
 	private Dictionary<string, int> machineTypesAndCount = new Dictionary<string, int>();
 	//best record
@@ -23,31 +76,65 @@
 	private List<List<DateTime>> endTimes = new List<List<DateTime>>();
 	protected override void OnInitialized()
 	{
-		GetWORequirements();
+
 		base.OnInitialized();
 	}
 
-	private async Task AAA()
+	protected override Task OnInitializedAsync()
 	{
-		var a = await httpClient.GetFromJsonAsync<WeatherForecast[]>("AAA");
+		round = stateContainer.GetCurrentRound();
+		GABtnCss = stateContainer.GetGABtnCSS();
+
+		stateContainer.OnCurrentRoundChange += GetCurrentRound;
+		stateContainer.OnGABtnCssChange += GetGABtbCSS;
+		GetWORequirements();
+		return base.OnInitializedAsync();
+	}
+
+	public void Dispose()
+	{
+		stateContainer.OnCurrentRoundChange -= GetCurrentRound;
+		stateContainer.OnGABtnCssChange -= GetGABtbCSS;
+	}
+
+	private void GoToChart()
+	{
+		navigationManager.NavigateTo("schedulingChart");
+	}
+
+	private void GetCurrentRound(int currentRound)
+	{
+		round = currentRound;
+		StateHasChanged();
+	}
+	private void GetGABtbCSS(string newGABtnCss)
+	{
+		GABtnCss = newGABtnCss;
+		StateHasChanged();
 	}
 
 	private async Task StartGA()
 	{
 		stateContainer.UIStartGA();
-		for (int i = 0; i < stateContainer.GetIteratives(); i++)
+		for (int i = 0; i < stateContainer.GetIterations(); i++)
 		{
 			CopyRequirements();
 			InitMachineSchedule();
 			RandomAssignToMachine();
 			ToFlatSchedule();
 			FlatScheduleToInterval();
-			stateContainer.A();
-			await Task.Delay(10);
+			stateContainer.SetCurrentRound(i+1);
+			//Console.WriteLine(stateContainer.GetCurrentRound());
+			await Task.Delay(1);
 		}
-		stateContainer.SetWOInfos(bestWOInfos);
-		stateContainer.SetBsetDueTime(bestDueTime);
+		//stateContainer.SetWOInfos(bestWOInfos);
+		//stateContainer.SetBsetDueTime(bestDueTime);
+		SchedulingHistory newScheduling = new SchedulingHistory(DateTime.Now, bestWOInfos, bestDueTime);
+		stateContainer.SetCurrentScheduling(newScheduling);
+		stateContainer.AddSchedulingData(newScheduling);
 		stateContainer.UIFinishGA();
+		StateHasChanged();
+		toastService.ShowSuccess("scheduling finished");
 	}
 
 	private void GetWORequirements()

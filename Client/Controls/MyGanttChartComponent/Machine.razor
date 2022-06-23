@@ -1,6 +1,4 @@
-﻿<button class="button is-rounded is-light @statusCss" @onclick="@(()=>{
-    getClickMachine.InvokeAsync(machineName);
-})">
+﻿<button class="button is-rounded is-light @statusCss">
 @machineName-@index</button>
 
 @code {
@@ -10,8 +8,6 @@
     public int index { get; set; } = 1;
     [Parameter]
     public int machineStatus { get; set; } = 0;
-    [Parameter]
-    public EventCallback<string> getClickMachine { get; set; }
 
     string statusCss = "";
     protected override void OnParametersSet()

@@ -5,31 +5,9 @@
     <div class="modal-dialog modal-xl modal-dialog-centered" style="width:100%">
         <div class="modal-content" style="width:auto">
             <div class="modal-header">
-                <button class="button is-medium is-static is-outlined @status">@currentMachineInfos.machineName</button>
+                header
             </div>
             <div class="modal-body">
-                <table>
-                    <thead>New WorkOrder</thead>
-                    <tr>
-                        <td><input @bind="newWO"></td>
-                        <td><input type="datetime-local" @bind="start"></td>
-                        <td><input type="datetime-local" @bind="end"></td>
-                    </tr>
-                    <thead>Current WorkOrder</thead>
-                    <tr>
-                        <td style="font-weight:bold; text-align: center">wo</td>
-                        <td style="font-weight:bold; text-align: center">start</td>
-                        <td style="font-weight:bold; text-align: center">end</td>
-                    </tr>
-                    @foreach(WOAndTimes wo in currentMachineInfos.woAndTimes)
-                    {
-                        <tr style="text-align: center">
-                            <td>@wo.wo</td>
-                            <td>@wo.startAndEndTime.startTime</td>
-                            <td>@wo.startAndEndTime.endTime</td>
-                        </tr>
-                    }
-                </table>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-primary" @onclick="AddNewWO">Insert</button>
@@ -56,7 +34,6 @@
     protected override void OnParametersSet()
     {
         base.OnParametersSet();
-        machineStyle(currentMachineInfos.machineStatus);
     }
     string status = "";
 

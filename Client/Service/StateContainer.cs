@@ -2,20 +2,44 @@
 public class StateContainer
 {
     //GA UI
+    private int currentRound = 0;
+    public int GetCurrentRound()
+    {
+        return currentRound;
+    }
+
+    public void SetCurrentRound(int i)
+    {
+        currentRound = i;
+        CurrentRoundChange(i);
+    }
+    public event Action<int>? OnCurrentRoundChange;
+    public void CurrentRoundChange(int currentRoung) => OnCurrentRoundChange?.Invoke(currentRoung);
+
+    private string gaBtnCss = "is-primary";
+    public string GetGABtnCSS()
+    {
+        return gaBtnCss;
+    }
     public void UIStartGA()
     {
-        GAbtnType = "is-danger  is-loading";
-        GAbtnstatusCss = "title=\"Disabled button\" disabled";
-        NotifyStateChanged();
+        gaBtnCss = "is-danger  is-loading title=\"Disabled button\" disabled";
+        //GAbtnType = "is-danger  is-loading";
+        //GAbtnstatusCss = "title=\"Disabled button\" disabled";
+        GABtnCssChange(gaBtnCss);
     }
 
     public void UIFinishGA()
     {
-        GAbtnType = "is-primary";
-        GAbtnstatusCss = "";
-        NotifyStateChanged();
-        //Console.WriteLine("...");
+        gaBtnCss = "is-primary";
+        //GAbtnType = "is-primary";
+        //GAbtnstatusCss = "";
+        GABtnCssChange(gaBtnCss);
     }
+    public event Action<string>? OnGABtnCssChange;
+    public void GABtnCssChange(string newGABtnCssChange) => OnGABtnCssChange?.Invoke(gaBtnCss);
+    
+    
     private string GAbtnType = "is-primary";
     public string GetGAbtnType()
     {
@@ -28,27 +52,54 @@ public class StateContainer
     }
     //algo configs
     private int iteratives = 1000;
-    public int a = 0;
-    public void A()
-    {
-        a++;
-        NotifyStateChanged();
-    }
-    public int GetIteratives()
+    public int GetIterations()
     {
         return iteratives;
     }
+    //GA history data
+    private List<SchedulingHistory> schedulingHistories = new List<SchedulingHistory>();
+    public void AddSchedulingData(SchedulingHistory schedulingHistory)
+    {
+        if (schedulingHistories.Count < 10)
+        {
+            schedulingHistories.Add(schedulingHistory);
+        }
+        else
+        {
+            int tmpIndex = schedulingHistories.IndexOf(schedulingHistories.MinBy(x => x.dataTimeID));
+            if (tmpIndex != -1)
+            {
+                schedulingHistories[tmpIndex] = schedulingHistory;
+            }
+        }
+        GAHistoryDataChamge(schedulingHistories);
+    }
+    public List<SchedulingHistory> GetSchedulingData()
+    {
+        return schedulingHistories;
+    }
+    public SchedulingHistory GetSchedulingHistoryByDateTimeString(DateTime dateTime)
+    {
+        SchedulingHistory target = schedulingHistories.FirstOrDefault(x => x.dataTimeID.ToString("yyyy MM dd HH mm ss") == dateTime.ToString("yyyy MM dd HH mm ss"));
+        return target;
+    }
+    public event Action<List<SchedulingHistory>>? OnGAHistoryDataChamge;
+    public void GAHistoryDataChamge(List<SchedulingHistory> newSchedulingHistory) => OnGAHistoryDataChamge?.Invoke(newSchedulingHistory);
+    private SchedulingHistory currentScheduling = new SchedulingHistory();
 
-    private TimeSpan bestDueTime = TimeSpan.Zero;
-    public void SetBsetDueTime(TimeSpan bestDueTime)
+    public SchedulingHistory GetCurrentScheduling()
     {
-        this.bestDueTime = bestDueTime;
-        NotifyStateChanged();
+        return currentScheduling;
     }
-    public TimeSpan GetBsetDueTime()
+    public void SetCurrentScheduling(SchedulingHistory newScheduling)
     {
-        return bestDueTime;
+        currentScheduling = newScheduling;
+        CurrentSchedulingChange(currentScheduling);
     }
+    public event Action<SchedulingHistory>? OnCurrentSchedulingChange;
+    public void CurrentSchedulingChange(SchedulingHistory newScheduling) => OnCurrentSchedulingChange?.Invoke(newScheduling);
+
+
     #region machine data
     private List<MachineData> allMachineStatus = new List<MachineData>() 
     {
@@ -112,40 +163,9 @@ public class StateContainer
     }
 
     #endregion
-    private List<WoInfo> woinfos = new List<WoInfo>();
-    #region WO setting
-    public List<WoInfo> GetWoInfo()
-    {
-        return woinfos ?? new List<WoInfo>();
-    }
-    
-    public void AddWoInfo(WoInfo woInfo)
-    {
-        if (!woinfos.Exists(x => x.machine == woInfo.machine && x.wo == woInfo.wo))
-        {
-            woinfos.Add(woInfo);
-            NotifyStateChanged();
-        }
-        else
-        {
 
-        }
-    }
 
-    public void SetWOInfos(List<WoInfo> newRecord)
-    {
-        ClearWoInfo();
-        woinfos = newRecord;
-        NotifyStateChanged();
-    }
-
-    public void ClearWoInfo()
-    {
-        woinfos = new List<WoInfo>();
-        NotifyStateChanged();
-    }
-    #endregion
     public event Action? OnChange;
-    private void NotifyStateChanged() => OnChange?.Invoke();
+    public void NotifyStateChanged() => OnChange?.Invoke();
     }
 

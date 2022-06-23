@@ -1,13 +1,24 @@
 ﻿@using MyBlazor.Shared.DataClass
-<div>start at: @minTime, end at: @maxTime</div>
-<div>minima duetime: @bestDueTime</div>
+
+<label class="oi oi-map-marker" style="font-size:15px; text-align:center; margin-left:20px" text-align:center"></label>
+@if (woinfos != null)
+{
+	<label style="font-size:20px; text-align:center; margin-left:15px">@dateTimeID.ToString("yyyy/MM/dd HH:mm:ss")</label>
+	<br>
+}
+@if(minTime!=maxTime)
+{
+	<label style="font-size:25px; text-align:center; margin-left:20px">@minTime.ToString("yyyy MM/dd hh:mm:ss")</label>
+	<label class="oi oi-chevron-right" style="font-size:20px; text-align:center; margin-left:20px"></label>
+	<label style="font-size:25px; text-align:center; margin-left:20px">@maxTime.ToString("yyyy MM/dd hh:mm:ss")</label>
+}
 <table class="table is-bordered">
 	<tbody>
 		@foreach(MachineWOInfos machineWOInfo in machineWOInfos)
 		{
 			<tr>
 				<td class="is-narrow border-0">
-					<Machine machineName="@machineWOInfo.machineName" index="@machineWOInfo.index" machineStatus="@machineWOInfo.machineStatus" getClickMachine="machineClickHandler"></Machine>
+					<Machine machineName="@machineWOInfo.machineName" index="@machineWOInfo.index" machineStatus="@machineWOInfo.machineStatus"></Machine>
 				</td>
 				<td class="is-narrow border-0">
 					<Capacity allWO="machineWOInfo.woAndTimes"></Capacity>
@@ -43,6 +54,24 @@
 		</tr>
 	</tbody>
 </table>
+@if (bestDueTime != TimeSpan.Zero)
+{
+	if (bestDueTime >= TimeSpan.Zero)
+	{
+		<label style="font-size:25px; color:lawngreen; text-align:center; margin-left:20px">No duetime in this scheduling</label>
+	}
+	else
+	{
+		<label style="font-size:25px; text-align:center; margin-left:20px">Delay:</label>
+		<label style="font-size:25px; color:palevioletred; text-align:center; margin-left:20px">@bestDueTime.ToString("h'h 'm'm 's's'")</label>
+	}
+}
+<div style="margin-top:20px; margin-left:20">
+	<button class="button is-info is-rounded is-light" style="border:none" @onclick="(()=>{showAddWODiakogue = true;})">
+	    <i class="oi oi-plus"></i>
+    </button>
+</div>
+
 
 @if (showAddWODiakogue)
 {
@@ -53,26 +82,38 @@
 
 @code {
 	[Parameter]
-	public TimeSpan bestDueTime { get; set; } = TimeSpan.Zero;
-	[Parameter]
 	public List<MachineData> allMachineStatus { get; set; } = new List<MachineData>();//only machine
 	[Parameter]
 	public List<MachineWOInfos> machineWOInfos { get; set;}= new List<MachineWOInfos>();//group by machine
 	[Parameter]
 	public MachineWOInfos? targetMachineInfos { get; set; }
 	[Parameter]
+	public DateTime dateTimeID { get; set; }
+	[Parameter]
 	public List<WoInfo> woinfos{ get; set; } = new List<WoInfo>();//detail
+	[Parameter]
+	public TimeSpan bestDueTime { get; set; } = TimeSpan.Zero;
 	public float tmp_margin { get; set; } = 0.0f;
 	public float tmp_width { get; set; } = 0.0f;
 
-	protected override Task OnInitializedAsync()
+	protected override Task OnParametersSetAsync()
 	{
+		InitMachine();
+		if (woinfos != null)
+		{
+			InitWoInfo();
+		}
+		StateHasChanged();
+		return base.OnParametersSetAsync();
+	}
+
+	private void InitMachine()
+	{
+		machineWOInfos.Clear();
 		for(int i = 0; i <allMachineStatus.Count; i++)
 		{
 			machineWOInfos.Add(new MachineWOInfos(allMachineStatus[i].machineName, allMachineStatus[i].index ,allMachineStatus[i].machineStatus, new List<WOAndTimes>()));
 		}
-		InitWoInfo();
-		return base.OnInitializedAsync();
 	}
 
 	private void InitWoInfo()
@@ -97,9 +138,9 @@
 	{
 		showAddWODiakogue=display;
 	}
-	void machineClickHandler(string targetMachine)
+	void machineClickHandler((string targetMachine, int index) machineAndIndex)
 	{
-		targetMachineInfos = machineWOInfos.Find(x => x.machineName == targetMachine);
+		targetMachineInfos = machineWOInfos.Find(x => x.machineName ==  machineAndIndex.targetMachine&& x.index == machineAndIndex.index);
 		showAddWODiakogue = true;
 	}
 
@@ -112,6 +153,8 @@
 		}
 		GetMaxAndMinTimeInterval();
 	}
+
+
 	//calculate position function
 	#region
 	public DateTime minTime { get; set; } = DateTime.Now;

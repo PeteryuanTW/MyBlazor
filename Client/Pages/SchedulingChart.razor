@@ -1,6 +1,33 @@
 ﻿@page "/schedulingChart"
+@using MyBlazor.Shared.DataClass
 @inject StateContainer stateContainer
-<MyGanttChart bestDueTime="@stateContainer.GetBsetDueTime()" allMachineStatus="@stateContainer.GetMachineData()" woinfos="@stateContainer.GetWoInfo()"></MyGanttChart>
+<MyGanttChart allMachineStatus="@machineData" dateTimeID ="@dateTimeID"  woinfos="@woinfos" bestDueTime="@bestDueTime"></MyGanttChart>
 
 @code {
+	public List<MachineData> machineData = new List<MachineData>();
+	private DateTime dateTimeID;
+	private List<WoInfo> woinfos = new List<WoInfo>();
+	private TimeSpan bestDueTime = TimeSpan.Zero;
+
+	protected override Task OnInitializedAsync()
+	{
+		machineData = stateContainer.GetMachineData();
+		dateTimeID = stateContainer.GetCurrentScheduling().dataTimeID;
+		woinfos = stateContainer.GetCurrentScheduling().woInfos;
+		bestDueTime = stateContainer.GetCurrentScheduling().dueTime;
+		stateContainer.OnCurrentSchedulingChange += GetNewScheduling;
+		return base.OnInitializedAsync();
+	}
+	public void Dispose()
+	{
+		stateContainer.OnCurrentSchedulingChange -= GetNewScheduling;
+	}
+
+	private void GetNewScheduling(SchedulingHistory newScheduling)
+	{
+		dateTimeID = newScheduling.dataTimeID;
+		woinfos = newScheduling.woInfos;
+		bestDueTime = newScheduling.dueTime;
+		StateHasChanged();
+	}
 }
