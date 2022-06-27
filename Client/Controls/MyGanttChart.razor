@@ -75,7 +75,7 @@
 
 @if (showAddWODiakogue)
 {
-	<AddWODialogue display="displayHandler" EC_newWO="NewWOHandler" currentMachineInfos=@targetMachineInfos></AddWODialogue>
+	<AddWODialogue display="displayHandler" ECInsertTime="NewWOHandler"></AddWODialogue>
 }
 
 
@@ -123,7 +123,15 @@
 			var targetMachine = machineWOInfos.Find(x=>x.machineName == woinfo.machine && x.index == woinfo.index);
 			if (targetMachine != null)
 			{
-				targetMachine.woAndTimes.Add(new WOAndTimes(woinfo.wo, 0, new StartTimeAndEndTime(woinfo.t.startTime, woinfo.t.endTime)));
+				var targetWO = targetMachine.woAndTimes.Find(x => x.wo == woinfo.wo);
+				if (targetWO != null)
+				{
+					targetWO.woStatus = woinfo.generateType;
+				}
+				else
+				{
+					targetMachine.woAndTimes.Add(new WOAndTimes(woinfo.wo, woinfo.generateType, new StartTimeAndEndTime(woinfo.t.startTime, woinfo.t.endTime)));
+				}
 			}
 		}
 		foreach(MachineWOInfos woList in machineWOInfos)
@@ -144,14 +152,16 @@
 		showAddWODiakogue = true;
 	}
 
-	void NewWOHandler(MachineWOInfos newInfos)
+	void NewWOHandler(DateTime insertTime)
 	{
-		machineWOInfos.Find(x => x.machineName == newInfos.machineName && x.index == newInfos.index).woAndTimes = newInfos.woAndTimes;
-		foreach(MachineWOInfos woList in machineWOInfos)
+		foreach(WoInfo woinfo in woinfos)
 		{
-			woList.Sort();
+			if (woinfo.t.startTime >= insertTime)
+			{
+				woinfo.generateType = 1;
+			}
 		}
-		GetMaxAndMinTimeInterval();
+		InitWoInfo();
 	}
 
 

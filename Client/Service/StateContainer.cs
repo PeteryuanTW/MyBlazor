@@ -24,16 +24,12 @@ public class StateContainer
     public void UIStartGA()
     {
         gaBtnCss = "is-danger  is-loading title=\"Disabled button\" disabled";
-        //GAbtnType = "is-danger  is-loading";
-        //GAbtnstatusCss = "title=\"Disabled button\" disabled";
         GABtnCssChange(gaBtnCss);
     }
 
     public void UIFinishGA()
     {
         gaBtnCss = "is-primary";
-        //GAbtnType = "is-primary";
-        //GAbtnstatusCss = "";
         GABtnCssChange(gaBtnCss);
     }
     public event Action<string>? OnGABtnCssChange;

@@ -8,6 +8,7 @@
                 header
             </div>
             <div class="modal-body">
+                <input type="datetime-local" @bind-value="insertTime" style="">
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-primary" @onclick="AddNewWO">Insert</button>
@@ -21,16 +22,8 @@
     [Parameter]
     public EventCallback<bool> display { get; set; }
     [Parameter]
-    public EventCallback<MachineWOInfos> EC_newWO { get; set; }
-    [Parameter]
-    public MachineWOInfos currentMachineInfos { get; set; }
-    [Parameter]
-    public string newWO { get; set; } = "";
-    [Parameter]
-    public DateTime start { get; set; } = DateTime.Now;
-    [Parameter]
-    public DateTime end { get; set; } = DateTime.Now;
-
+    public EventCallback<DateTime> ECInsertTime { get; set; }
+    private DateTime insertTime = DateTime.Now;
     protected override void OnParametersSet()
     {
         base.OnParametersSet();
@@ -55,48 +48,9 @@
 
     private void AddNewWO()
     {
-        if (newWO == "")
-        {
-            toastService.ShowError("WO should not be empty");
-            CloseDialogue();
-            return;
-        }
-        if (currentMachineInfos.woAndTimes.Exists(x => x.wo == newWO))
-        {
-            toastService.ShowError("WO should not be duplicate");
-            CloseDialogue();
-            return;
-        }
-        if (start >= end || start < DateTime.Now || end < DateTime.Now)
-        {
-            toastService.ShowError("please check time interval ");
-            CloseDialogue();
-            return;
-        }
-        WOAndTimes newWOAndTimes = new WOAndTimes(newWO, 1, new StartTimeAndEndTime(start, end));
-        for (int i = 0; i < currentMachineInfos.woAndTimes.Count; i++)
-        {
-            StartTimeAndEndTime startAndEnd = currentMachineInfos.woAndTimes[i].startAndEndTime;
-            if ((start > startAndEnd.startTime && start < startAndEnd.endTime))//seperate original WO into two parts
-            {
-                WOAndTimes preWOAndTimes = new WOAndTimes(currentMachineInfos.woAndTimes[i].wo+"-1", 0, new StartTimeAndEndTime(startAndEnd.startTime, start));
-                WOAndTimes posWOAndTimes = new WOAndTimes(currentMachineInfos.woAndTimes[i].wo+"-2", 0, new StartTimeAndEndTime(end, end+(startAndEnd.endTime-start)));
-                currentMachineInfos.woAndTimes.RemoveAt(i);
-                currentMachineInfos.woAndTimes.Add(preWOAndTimes);
-                currentMachineInfos.woAndTimes.Add(posWOAndTimes);
-
-                break;
-            }
-            else if (start < startAndEnd.startTime && end > startAndEnd.startTime && end < startAndEnd.endTime)//pospone original WO
-            {
-                return;
-            }
-        }
-        currentMachineInfos.woAndTimes.Add(newWOAndTimes);
-        EC_newWO.InvokeAsync(currentMachineInfos);
+        ECInsertTime.InvokeAsync(insertTime);
         CloseDialogue();
-        toastService.ShowSuccess("insert success");        
-
+        toastService.ShowSuccess("insert success");
     }
 
     private void CloseDialogue()

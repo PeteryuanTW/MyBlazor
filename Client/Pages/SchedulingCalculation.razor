@@ -76,7 +76,6 @@
 	private List<List<DateTime>> endTimes = new List<List<DateTime>>();
 	protected override void OnInitialized()
 	{
-
 		base.OnInitialized();
 	}
 
@@ -124,11 +123,8 @@
 			ToFlatSchedule();
 			FlatScheduleToInterval();
 			stateContainer.SetCurrentRound(i+1);
-			//Console.WriteLine(stateContainer.GetCurrentRound());
 			await Task.Delay(1);
 		}
-		//stateContainer.SetWOInfos(bestWOInfos);
-		//stateContainer.SetBsetDueTime(bestDueTime);
 		SchedulingHistory newScheduling = new SchedulingHistory(DateTime.Now, bestWOInfos, bestDueTime);
 		stateContainer.SetCurrentScheduling(newScheduling);
 		stateContainer.AddSchedulingData(newScheduling);
@@ -139,7 +135,7 @@
 
 	private void GetWORequirements()
 	{
-		allWORequirements = stateContainer.GetWORequirements();
+		allWORequirements = stateContainer.GetWORequirements().ToList<WORequirements>();
 	}
 	private void CopyRequirements()
 	{
@@ -183,8 +179,8 @@
 	}
 	private void RandonPickMachine(List<int> input)
 	{
-		Random r = new Random();
-		int pickIndex = r.Next(0, input.Count);
+		int second = DateTime.Now.Millisecond;
+		int pickIndex = second % input.Count;
 		for (int i = 0; i < input.Count; i++)
 		{
 			if (i == pickIndex)
@@ -245,6 +241,7 @@
 			endTimes.Add(tmpRow);
 		}
 		//end init
+
 		for (int i = 0; i < flatSchedule.Count; i++)
 		{
 			for (int j = 1; j < flatSchedule[i].Count - 1; j++)
@@ -254,7 +251,7 @@
 					DateTime start = GetEndTimeFrom(scheduleStartTime, i, j, 0) > GetEndTimeFrom(scheduleStartTime, i, j, 1)? GetEndTimeFrom(scheduleStartTime, i, j, 0):GetEndTimeFrom(scheduleStartTime, i, j, 1);
 					DateTime end = start + TimeSpan.Parse(flatSchedule[i][j]);
 					endTimes[i][j-1] = end;
-					tmpWOInfos.Add(new WoInfo(flatSchedule[i][0], stateContainer.GetMachineData()[j-1].machineName, stateContainer.GetMachineData()[j-1].index ,start, end));
+					tmpWOInfos.Add(new WoInfo(flatSchedule[i][0], stateContainer.GetMachineData()[j-1].machineName, stateContainer.GetMachineData()[j-1].index, 0, start, end));
 				}
 			}
 		}
