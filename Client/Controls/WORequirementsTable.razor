@@ -10,15 +10,15 @@
 			<td>Due Time</td>
 		</tr>
     </thead>
-	@foreach(WORequirements woRequirements in allWORequirements)
+	@foreach(WOJobs woJobs in allWOJobs)
 	{
 		<tr>
-			<td>@woRequirements.wo</td>
-			@foreach(TimeSpan interval in woRequirements.processCost)
+			<td>@woJobs.wo</td>
+			@foreach(TimeSpan interval in woJobs.processCost)
 			{
 				<td>@interval</td>
 			}
-			<td>@woRequirements.dueTime</td>
+			<td>@woJobs.dueTime</td>
 		</tr>
 	}
 </table>
@@ -27,5 +27,5 @@
 	[Parameter]
 	public Dictionary<string, int> machineTypes { get; set; } = new Dictionary<string, int>();
 	[Parameter]
-	public List<WORequirements> allWORequirements { get; set; } = new List<WORequirements>();
+	public List<WOJobs> allWOJobs { get; set; } = new List<WOJobs>();
 }

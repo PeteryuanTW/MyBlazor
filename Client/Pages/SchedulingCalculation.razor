@@ -63,13 +63,15 @@
 	private string GABtnCss = "";
 
 	//static data
-	private List<WORequirements> allWORequirements = new List<WORequirements>();
-	private Dictionary<string, int> machineTypesAndCount = new Dictionary<string, int>();
+	private List<WOJobs> allWOJobs = new();
+	private Dictionary<string, int> machineTypesAndCount = new();
+	private List<MachineTypeList> machineTypeLists = new();
+	private List<List<Job>> jobTypeMachineList = new();
 	//best record
 	private List<WoInfo> bestWOInfos = new List<WoInfo>();
 	private TimeSpan bestDueTime = TimeSpan.MaxValue;
 	//change when generate new gene
-	private List<WORequirements> tmp_allWORequirements = new List<WORequirements>();
+	private List<WOJobs> tmp_allWORequirements = new List<WOJobs>();
 	private List<List<int>> machineSchedule = new List<List<int>>();
 	private List<List<string>> flatSchedule = new List<List<string>>();
 	private List<WoInfo> tmpWOInfos = new List<WoInfo>();
@@ -86,7 +88,7 @@
 
 		stateContainer.OnCurrentRoundChange += GetCurrentRound;
 		stateContainer.OnGABtnCssChange += GetGABtbCSS;
-		GetWORequirements();
+		//GetWORequirements();
 		return base.OnInitializedAsync();
 	}
 
@@ -115,8 +117,17 @@
 	private async Task StartGA()
 	{
 		stateContainer.UIStartGA();
-		for (int i = 0; i < stateContainer.GetIterations(); i++)
+		if (!CheckWOJobsAndMachine())
 		{
+			return;
+		}
+		machineTypeLists = stateContainer.GetMachineTable();
+		jobTypeMachineList = InitMachineBufferByJobs();
+		AssignJobsToMachineBuffer();
+
+		/*
+		for (int i = 0; i < stateContainer.GetIterations(); i++)
+			{
 			CopyRequirements();
 			InitMachineSchedule();
 			RandomAssignToMachine();
@@ -131,31 +142,86 @@
 		stateContainer.UIFinishGA();
 		StateHasChanged();
 		toastService.ShowSuccess("scheduling finished");
+		*/
 	}
 
-	private void GetWORequirements()
+	private bool CheckWOJobsAndMachine()
 	{
-		allWORequirements = stateContainer.GetWORequirements().ToList<WORequirements>();
-	}
-	private void CopyRequirements()
-	{
-		tmp_allWORequirements = new List<WORequirements>(allWORequirements);
-		Shuffle(allWORequirements, 0, allWORequirements.Count - 1);
-	}
-	private void Shuffle<T>(IList<T> array, int first, int last)
-	{
-		Random r = new Random();
-		for (int n = last; n >= last;)
+		allWOJobs = stateContainer.GetWOJobs().ToList<WOJobs>();//copy one from state container
+		machineTypesAndCount = stateContainer.GetMachineTypeCount();
+		foreach (WOJobs wo_jobs in allWOJobs)
 		{
-			int k = r.Next(n);
-			--n;
-			T temp = array[n+first];
-			array[n + first] = array[k + first];
-			array[k + first] = temp;
+			if(wo_jobs.GetJobsCount() != machineTypesAndCount.Count)
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	private List<List<Job>> InitMachineBufferByJobs()
+	{
+		List<List<Job>> res = new();
+		for (int i = 0; i < allWOJobs[0].processCost.Count; i++)
+		{
+			int typeJobs = 0;//amount of each type of jobs
+			for (int j = 0; j < allWOJobs.Count; j++)
+			{
+				if (allWOJobs[j].processCost[i] != TimeSpan.Zero)
+				{
+					typeJobs++;
+				}
+			}
+			int typeAmount = machineTypesAndCount.ElementAt(i).Value;
+			res.Add(new List<Job>(new Job[typeJobs * typeAmount]));
+		}
+		return res;
+	}
+
+	private void AssignJobsToMachineBuffer()
+	{
+		for (int i = 0; i <  allWOJobs.Count; i++ )//get job from wo_job list
+		{
+			for (int j = 0; j < allWOJobs[i].processCost.Count; j++)//job types
+			{
+				if (allWOJobs[i].processCost[j] != TimeSpan.Zero)
+				{
+					int totalIndex;
+					int index;
+					do
+					{
+						totalIndex = jobTypeMachineList[j].Count;
+						Random r = new Random();
+						index = r.Next(0, totalIndex);
+					} while (jobTypeMachineList[j][index] != null);
+					jobTypeMachineList[j][index] = new Job(allWOJobs[i].wo, allWOJobs[i].processCost[j]);
+				}
+			}
+
 		}
 	}
-	private void InitMachineSchedule()
+
+	private void FillJobsTimes()
 	{
+		for (int i = 0; i < jobTypeMachineList.Count; i++)
+		{
+			int typeAmount = machineTypesAndCount.ElementAt(i).Value;
+			for (int j = 0; j < jobTypeMachineList[i].Count; j += typeAmount)
+			{
+				for (int k = j; k < j + typeAmount; k++)
+				{
+					if (jobTypeMachineList[i][k] != null)
+					{
+						
+					}
+				}
+			}
+		}
+	}
+
+	private void InitMachineScheduleByJobs()
+	{
+		/*
 		machineSchedule = new List<List<int>>();
 		machineTypesAndCount = stateContainer.GetMachineTypeCount();
 		for (int i = 0; i < machineTypesAndCount.Count; i++)
@@ -165,7 +231,7 @@
 			{
 				machineSchedule[i].Add(0);
 			}
-		}
+		}*/
 
 	}
 	private void RandomAssignToMachine()
@@ -193,7 +259,7 @@
 			}
 		}
 	}
-
+	/*
 	private void ToFlatSchedule()
 	{
 		flatSchedule = new List<List<string>>();
@@ -221,7 +287,7 @@
 
 			flatSchedule[i].Add(tmp_allWORequirements[i].dueTime.ToString());
 		}
-	}
+	}*/
 
 	private void FlatScheduleToInterval()
 	{
@@ -251,7 +317,7 @@
 					DateTime start = GetEndTimeFrom(scheduleStartTime, i, j, 0) > GetEndTimeFrom(scheduleStartTime, i, j, 1)? GetEndTimeFrom(scheduleStartTime, i, j, 0):GetEndTimeFrom(scheduleStartTime, i, j, 1);
 					DateTime end = start + TimeSpan.Parse(flatSchedule[i][j]);
 					endTimes[i][j-1] = end;
-					tmpWOInfos.Add(new WoInfo(flatSchedule[i][0], stateContainer.GetMachineData()[j-1].machineName, stateContainer.GetMachineData()[j-1].index, 0, start, end));
+					tmpWOInfos.Add(new WoInfo(flatSchedule[i][0], stateContainer.GetMachineData()[j-1].machineName, int.Parse(stateContainer.GetMachineData()[j-1].index), 0, start, end));
 				}
 			}
 		}

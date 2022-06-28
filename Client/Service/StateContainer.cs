@@ -99,12 +99,12 @@ public class StateContainer
     #region machine data
     private List<MachineData> allMachineStatus = new List<MachineData>() 
     {
-        new MachineData("m1", 1, 1),
-        new MachineData("m1", 2, 1),
-        new MachineData("m2", 1 ,1),
-        new MachineData("m2", 2 ,1),
-        new MachineData("m3", 1, 1),
-        new MachineData("m3", 2, 1),
+        new MachineData("m1", "1", 1),
+        new MachineData("m1", "2", 1),
+        new MachineData("m2", "1" ,1),
+        new MachineData("m2", "2" ,1),
+        new MachineData("m3", "1", 1),
+        new MachineData("m3", "2", 1),
     };
     public List<MachineData> GetMachineData()
     {
@@ -123,6 +123,25 @@ public class StateContainer
 
         return res;
     }
+    public List<MachineTypeList> GetMachineTable()
+    {
+        List<MachineTypeList> res = new();
+        foreach (MachineData machineData in allMachineStatus)
+        {
+            if (!res.Exists(x => x.machineType == machineData.machineName))
+            {
+                res.Add(new MachineTypeList(machineData.machineName));
+            }
+            res.FirstOrDefault(x => x.machineType == machineData.machineName).machineIndexList.Add(machineData.index);
+        }
+        foreach (var machine in res)
+        {
+            machine.machineIndexList.Sort();
+        }
+        res.OrderBy(x=>x.machineType);
+        return res;
+    }
+
     public void AddMachineData(MachineData machineData)
     {
         if (!allMachineStatus.Exists(x => x.machineName == machineData.machineName && x.index == machineData.index))
@@ -137,23 +156,24 @@ public class StateContainer
     }
     #endregion
     #region wo requirements
-    private List<WORequirements> allWORequirements = new List<WORequirements>()
+    private List<WOJobs> allWOJobs = new List<WOJobs>()
     {
-        new WORequirements("wo1", new List<TimeSpan>{new TimeSpan(0, 10 ,0),  new TimeSpan(0, 20 ,0), new TimeSpan(0, 30 ,0),}, DateTime.Now.AddMinutes(10)),
-        new WORequirements("wo2", new List<TimeSpan>{new TimeSpan(0, 20 ,0),  new TimeSpan(0, 50 ,0), new TimeSpan(0, 15 ,0),}, DateTime.Now.AddMinutes(20)),
-        new WORequirements("wo3", new List<TimeSpan>{new TimeSpan(0, 5 ,0),  new TimeSpan(0, 30 ,0), new TimeSpan(0, 10 ,0),}, DateTime.Now.AddMinutes(15)),
-        new WORequirements("wo4", new List<TimeSpan>{new TimeSpan(0, 30 ,0),  new TimeSpan(0, 10 ,0), new TimeSpan(0, 5 ,0),}, DateTime.Now.AddMinutes(50)),
-        new WORequirements("wo5", new List<TimeSpan>{new TimeSpan(0, 20 ,0),  new TimeSpan(0, 10 ,0), new TimeSpan(0, 50 ,0),}, DateTime.Now.AddMinutes(100)),
+        new WOJobs("wo1", new List<TimeSpan>{new TimeSpan(0, 10 ,0),  new TimeSpan(0, 20 ,0), new TimeSpan(0, 30 ,0),}, DateTime.Now.AddMinutes(10)),
+        new WOJobs("wo2", new List<TimeSpan>{new TimeSpan(0, 20 ,0),  new TimeSpan(0, 50 ,0), new TimeSpan(0, 15 ,0),}, DateTime.Now.AddMinutes(20)),
+        new WOJobs("wo3", new List<TimeSpan>{new TimeSpan(0, 5 ,0),  new TimeSpan(0, 30 ,0), new TimeSpan(0, 10 ,0),}, DateTime.Now.AddMinutes(15)),
+        new WOJobs("wo4", new List<TimeSpan>{new TimeSpan(0, 30 ,0),  new TimeSpan(0, 10 ,0), new TimeSpan(0, 5 ,0),}, DateTime.Now.AddMinutes(50)),
+        new WOJobs("wo5", new List<TimeSpan>{new TimeSpan(0, 20, 0),  new TimeSpan(0, 10 ,0), new TimeSpan(0, 50 ,0),}, DateTime.Now.AddMinutes(100)),
     };
-    public List<WORequirements> GetWORequirements()
+    //new TimeSpan(0, 20 ,0)
+    public List<WOJobs> GetWOJobs()
     {
-        return allWORequirements ?? new List<WORequirements>();
+        return allWOJobs ?? new List<WOJobs>();
     }
-    public void AddWORequirements(WORequirements newWORequirements)
+    public void AddWORequirements(WOJobs newWORequirements)
     {
-        if (!allWORequirements.Exists(x => x.wo == newWORequirements.wo))
+        if (!allWOJobs.Exists(x => x.wo == newWORequirements.wo))
         {
-            allWORequirements.Add(newWORequirements);
+            allWOJobs.Add(newWORequirements);
             NotifyStateChanged();
         }
     }

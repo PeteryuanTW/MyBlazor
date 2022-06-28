@@ -1,6 +1,6 @@
 ﻿@page "/containerLog"
 @inject StateContainer stateContainer
 <MachineStateTable machineDatas = "@stateContainer.GetMachineData()"></MachineStateTable>
-<WORequirementsTable machineTypes = "@stateContainer.GetMachineTypeCount()" allWORequirements = "@stateContainer.GetWORequirements()"></WORequirementsTable>
+<WORequirementsTable machineTypes = "@stateContainer.GetMachineTypeCount()" allWORequirements = "@stateContainer.GetWOJobs()"></WORequirementsTable>
 @code {
 }
