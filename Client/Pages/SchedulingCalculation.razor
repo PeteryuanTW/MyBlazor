@@ -67,6 +67,9 @@
 	private Dictionary<string, int> machineTypesAndCount = new();
 	private List<MachineTypeList> machineTypeLists = new();
 	private List<List<Job>> jobTypeMachineList = new();
+	//dynamic programig
+	private Dictionary<(string, string), DateTime> machineNextAvailable = new();
+	private Dictionary<string, DateTime> woNextAvailable = new();
 	//best record
 	private List<WoInfo> bestWOInfos = new List<WoInfo>();
 	private TimeSpan bestDueTime = TimeSpan.MaxValue;
@@ -121,7 +124,9 @@
 		{
 			return;
 		}
+		InitWONextAvailable();
 		machineTypeLists = stateContainer.GetMachineTable();
+		InitMachineNextAvailable();
 		jobTypeMachineList = InitMachineBufferByJobs();
 		AssignJobsToMachineBuffer();
 
@@ -143,6 +148,24 @@
 		StateHasChanged();
 		toastService.ShowSuccess("scheduling finished");
 		*/
+	}
+
+	private void InitMachineNextAvailable()
+	{
+		machineNextAvailable = new();
+		foreach (MachineData machineData in stateContainer.GetMachineData())
+		{
+			machineNextAvailable.Add((machineData.machineName, machineData.index), machineData.nextAvailableTime);
+		}
+	}
+
+	private void InitWONextAvailable()
+	{
+		woNextAvailable = new();
+		foreach (WOJobs wojobs in stateContainer.GetWOJobs())
+		{
+			woNextAvailable.Add(wojobs.wo, DateTime.MinValue);
+		}
 	}
 
 	private bool CheckWOJobsAndMachine()
