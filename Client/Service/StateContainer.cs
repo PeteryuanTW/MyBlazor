@@ -81,7 +81,7 @@ public class StateContainer
     }
     public event Action<List<SchedulingHistory>>? OnGAHistoryDataChamge;
     public void GAHistoryDataChamge(List<SchedulingHistory> newSchedulingHistory) => OnGAHistoryDataChamge?.Invoke(newSchedulingHistory);
-    private SchedulingHistory currentScheduling = new SchedulingHistory();
+    private SchedulingHistory currentScheduling;
 
     public SchedulingHistory GetCurrentScheduling()
     {
@@ -155,7 +155,7 @@ public class StateContainer
         }
     }
     #endregion
-    #region wo requirements
+    #region wo jobs
     private List<WOJobs> allWOJobs = new List<WOJobs>()
     {
         new WOJobs("wo1", new List<TimeSpan>{new TimeSpan(0, 10 ,0),  new TimeSpan(0, 20 ,0), new TimeSpan(0, 30 ,0),}, DateTime.Now.AddMinutes(10)),
@@ -164,7 +164,6 @@ public class StateContainer
         new WOJobs("wo4", new List<TimeSpan>{new TimeSpan(0, 30 ,0),  new TimeSpan(0, 10 ,0), new TimeSpan(0, 5 ,0),}, DateTime.Now.AddMinutes(50)),
         new WOJobs("wo5", new List<TimeSpan>{new TimeSpan(0, 20, 0),  new TimeSpan(0, 10 ,0), new TimeSpan(0, 50 ,0),}, DateTime.Now.AddMinutes(100)),
     };
-    //new TimeSpan(0, 20 ,0)
     public List<WOJobs> GetWOJobs()
     {
         return allWOJobs ?? new List<WOJobs>();

@@ -1,23 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace MyBlazor.Shared.DataClass
+﻿namespace MyBlazor.Shared.DataClass
 {
     public class Job
     {
         public string machine;
         public string index;
         public string wo;
+        public int generateType;
         public DateTime start;
         public TimeSpan duration;
         public DateTime end;
 
-        public Job(string wo, TimeSpan duration)
+        public Job(string wo, int generateType, TimeSpan duration)
         {
             this.wo = wo;
+            this.generateType = generateType;
             this.duration = duration;
             this.machine = "";
             this.index = "";

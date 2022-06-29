@@ -44,15 +44,15 @@
 			<td>
 				@if (schedulingHistory.dueTime >= TimeSpan.Zero)
 	            {
-		            <label style="color:lawngreen">No duetime in this scheduling</label>
+					<label style="color:palevioletred">@schedulingHistory.dueTime.ToString("h'h 'm'm 's's'")</label>
 	            }
 	            else
 	            {
-		            <label style="color:palevioletred">@schedulingHistory.dueTime.ToString("h'h 'm'm 's's'")</label>
+		            <label style="color:lawngreen">No duetime in this scheduling</label>
 	            }
 			</td>
 			<td>
-				@schedulingHistory.woInfos.Count()
+				@schedulingHistory.jobsCount
 			</td>
 		</tr>
 	}
@@ -66,19 +66,15 @@
 	private List<WOJobs> allWOJobs = new();
 	private Dictionary<string, int> machineTypesAndCount = new();
 	private List<MachineTypeList> machineTypeLists = new();
+	private List<int> typeJobsCount = new();
 	private List<List<Job>> jobTypeMachineList = new();
 	//dynamic programig
 	private Dictionary<(string, string), DateTime> machineNextAvailable = new();
 	private Dictionary<string, DateTime> woNextAvailable = new();
 	//best record
-	private List<WoInfo> bestWOInfos = new List<WoInfo>();
-	private TimeSpan bestDueTime = TimeSpan.MaxValue;
-	//change when generate new gene
-	private List<WOJobs> tmp_allWORequirements = new List<WOJobs>();
-	private List<List<int>> machineSchedule = new List<List<int>>();
-	private List<List<string>> flatSchedule = new List<List<string>>();
-	private List<WoInfo> tmpWOInfos = new List<WoInfo>();
-	private List<List<DateTime>> endTimes = new List<List<DateTime>>();
+	private List<List<Job>> bestJobs = new();
+	private TimeSpan bestTime = TimeSpan.MaxValue;
+
 	protected override void OnInitialized()
 	{
 		base.OnInitialized();
@@ -91,7 +87,6 @@
 
 		stateContainer.OnCurrentRoundChange += GetCurrentRound;
 		stateContainer.OnGABtnCssChange += GetGABtbCSS;
-		//GetWORequirements();
 		return base.OnInitializedAsync();
 	}
 
@@ -126,28 +121,29 @@
 		}
 		InitWONextAvailable();
 		machineTypeLists = stateContainer.GetMachineTable();
-		InitMachineNextAvailable();
-		jobTypeMachineList = InitMachineBufferByJobs();
-		AssignJobsToMachineBuffer();
 
-		/*
 		for (int i = 0; i < stateContainer.GetIterations(); i++)
+		{
+			InitMachineNextAvailable();
+			InitWONextAvailable();
+			jobTypeMachineList = InitMachineBufferByJobs();
+			AssignJobsToMachineBuffer();
+			FillJobsTimes();
+			if (CalculateDueTime(woNextAvailable) < bestTime)
 			{
-			CopyRequirements();
-			InitMachineSchedule();
-			RandomAssignToMachine();
-			ToFlatSchedule();
-			FlatScheduleToInterval();
+				bestTime = CalculateDueTime(woNextAvailable);
+				bestJobs = jobTypeMachineList;
+			}
 			stateContainer.SetCurrentRound(i+1);
 			await Task.Delay(1);
 		}
-		SchedulingHistory newScheduling = new SchedulingHistory(DateTime.Now, bestWOInfos, bestDueTime);
+		SchedulingHistory newScheduling = new SchedulingHistory(DateTime.Now, bestJobs, bestTime);
 		stateContainer.SetCurrentScheduling(newScheduling);
 		stateContainer.AddSchedulingData(newScheduling);
+
 		stateContainer.UIFinishGA();
 		StateHasChanged();
 		toastService.ShowSuccess("scheduling finished");
-		*/
 	}
 
 	private void InitMachineNextAvailable()
@@ -185,6 +181,7 @@
 	private List<List<Job>> InitMachineBufferByJobs()
 	{
 		List<List<Job>> res = new();
+		typeJobsCount = new();
 		for (int i = 0; i < allWOJobs[0].processCost.Count; i++)
 		{
 			int typeJobs = 0;//amount of each type of jobs
@@ -195,6 +192,7 @@
 					typeJobs++;
 				}
 			}
+			typeJobsCount.Add(typeJobs);
 			int typeAmount = machineTypesAndCount.ElementAt(i).Value;
 			res.Add(new List<Job>(new Job[typeJobs * typeAmount]));
 		}
@@ -217,7 +215,7 @@
 						Random r = new Random();
 						index = r.Next(0, totalIndex);
 					} while (jobTypeMachineList[j][index] != null);
-					jobTypeMachineList[j][index] = new Job(allWOJobs[i].wo, allWOJobs[i].processCost[j]);
+					jobTypeMachineList[j][index] = new Job(allWOJobs[i].wo, 0,allWOJobs[i].processCost[j]);
 				}
 			}
 
@@ -228,164 +226,39 @@
 	{
 		for (int i = 0; i < jobTypeMachineList.Count; i++)
 		{
-			int typeAmount = machineTypesAndCount.ElementAt(i).Value;
-			for (int j = 0; j < jobTypeMachineList[i].Count; j += typeAmount)
+			string type = machineTypeLists[i].machineType;
+			int typeAmount = typeJobsCount[i];
+			for (int j = 0; j < jobTypeMachineList[i].Count; j++)
 			{
-				for (int k = j; k < j + typeAmount; k++)
+				if (jobTypeMachineList[i][j] != null)
 				{
-					if (jobTypeMachineList[i][k] != null)
-					{
-						
-					}
+					int typeIndex = j / typeAmount;
+					string index = machineTypeLists[i].machineIndexList[typeIndex];
+
+					Job currentJob = jobTypeMachineList[i][j];
+					currentJob.machine = type;
+					currentJob.index = index;
+
+					DateTime startAt = machineNextAvailable[(type, index)] > woNextAvailable[currentJob.wo] ? machineNextAvailable[(type, index)] : woNextAvailable[currentJob.wo];
+
+					currentJob.SetStartTime(startAt);
+					machineNextAvailable[(type, index)] = currentJob.end;
+					woNextAvailable[currentJob.wo] = currentJob.end;
+
 				}
 			}
 		}
 	}
-
-	private void InitMachineScheduleByJobs()
+	private TimeSpan CalculateDueTime(Dictionary<string, DateTime> current_woNextAvailable)
 	{
-		/*
-		machineSchedule = new List<List<int>>();
-		machineTypesAndCount = stateContainer.GetMachineTypeCount();
-		for (int i = 0; i < machineTypesAndCount.Count; i++)
+		TimeSpan res = TimeSpan.Zero;
+		foreach (WOJobs woJob in allWOJobs)
 		{
-			machineSchedule.Add(new List<int>());
-			for (int j = 0; j < machineTypesAndCount.ElementAt(i).Value; j++)
+			DateTime expect = woJob.dueTime;
+			DateTime actual = current_woNextAvailable[woJob.wo];
+			if (actual > expect)
 			{
-				machineSchedule[i].Add(0);
-			}
-		}*/
-
-	}
-	private void RandomAssignToMachine()
-	{
-		Random r = new Random();
-
-		foreach (List<int> eachType in machineSchedule)
-		{
-			RandonPickMachine(eachType);
-		}
-	}
-	private void RandonPickMachine(List<int> input)
-	{
-		int second = DateTime.Now.Millisecond;
-		int pickIndex = second % input.Count;
-		for (int i = 0; i < input.Count; i++)
-		{
-			if (i == pickIndex)
-			{
-				input[i] = 1;
-			}
-			else
-			{
-				input[i] = 0;
-			}
-		}
-	}
-	/*
-	private void ToFlatSchedule()
-	{
-		flatSchedule = new List<List<string>>();
-		for (int i = 0; i < tmp_allWORequirements.Count; i++)
-		{
-			flatSchedule.Add(new List<string>());
-			flatSchedule[i].Add(tmp_allWORequirements[i].wo);
-
-			for (int j = 0; j < tmp_allWORequirements[i].processCost.Count; j++)
-			{
-				InitMachineSchedule();
-				RandomAssignToMachine();
-				for (int k = 0; k < machineSchedule[j].Count; k++)
-				{
-					if (machineSchedule[j][k] == 0)
-					{
-						flatSchedule[i].Add("0");
-					}
-					else if (machineSchedule[j][k] == 1)
-					{
-						flatSchedule[i].Add(tmp_allWORequirements[i].processCost[j].ToString());
-					}
-				}
-			}
-
-			flatSchedule[i].Add(tmp_allWORequirements[i].dueTime.ToString());
-		}
-	}*/
-
-	private void FlatScheduleToInterval()
-	{
-		DateTime scheduleStartTime = DateTime.Now;
-		//init endtime list without wo and duetime
-		int rows = flatSchedule.Count();
-		int columns = flatSchedule[0].Count - 2;
-		endTimes = new List<List<DateTime>>();
-		tmpWOInfos = new List<WoInfo>();
-		for (int i = 0; i < rows; i++)
-		{
-			List<DateTime> tmpRow = new List<DateTime>();
-			for (int j = 0; j < columns; j++)
-			{
-				tmpRow.Add(scheduleStartTime);
-			}
-			endTimes.Add(tmpRow);
-		}
-		//end init
-
-		for (int i = 0; i < flatSchedule.Count; i++)
-		{
-			for (int j = 1; j < flatSchedule[i].Count - 1; j++)
-			{
-				if (flatSchedule[i][j] != "0")
-				{
-					DateTime start = GetEndTimeFrom(scheduleStartTime, i, j, 0) > GetEndTimeFrom(scheduleStartTime, i, j, 1)? GetEndTimeFrom(scheduleStartTime, i, j, 0):GetEndTimeFrom(scheduleStartTime, i, j, 1);
-					DateTime end = start + TimeSpan.Parse(flatSchedule[i][j]);
-					endTimes[i][j-1] = end;
-					tmpWOInfos.Add(new WoInfo(flatSchedule[i][0], stateContainer.GetMachineData()[j-1].machineName, int.Parse(stateContainer.GetMachineData()[j-1].index), 0, start, end));
-				}
-			}
-		}
-
-		if (GetDueTime(endTimes) < bestDueTime)
-		{
-			bestWOInfos = tmpWOInfos;
-			bestDueTime = GetDueTime(endTimes);
-		}
-
-	}
-
-	private TimeSpan GetDueTime(List<List<DateTime>> endTimes)
-	{
-		TimeSpan ts = TimeSpan.Zero;
-		for (int i = 0; i< tmp_allWORequirements.Count; i++)
-		{
-            ts += (tmp_allWORequirements[i].dueTime - endTimes[i].Max());
-		}
-		return ts;
-	}
-
-	private DateTime GetEndTimeFrom(DateTime baseLine, int row, int col, int type)//0:last process, 1:machine
-	{
-		DateTime res = baseLine;
-		if (type == 0)
-		{
-			for (int i = col - 1; i >= 0; i--)
-			{
-				if (endTimes[row][i] > baseLine)
-				{
-					res = endTimes[row][i];
-					break;
-				}
-			}
-		}
-		else if (type == 1)
-		{
-			for (int i = row; i >= 0; i--)
-			{
-				if (endTimes[i][col-1] > baseLine)
-				{
-					res = endTimes[i][col-1];
-					break;
-				}
+				res += (actual - expect);
 			}
 		}
 		return res;
