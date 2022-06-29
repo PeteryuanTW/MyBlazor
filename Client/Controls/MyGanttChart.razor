@@ -62,18 +62,7 @@
 		<label style="font-size:25px; color:lawngreen; text-align:center; margin-left:20px">No duetime in this scheduling</label>
 	}
 }
-<div style="margin-top:20px; margin-left:20px">
-	<button class="button is-info is-rounded is-light" style="border:none" @onclick="(()=>{showAddWODiakogue = true;})">
-	    <i class="oi oi-plus"></i>
-    </button>
-</div>
 
-
-@if (showAddWODiakogue)
-{
-	<AddWODialogue display="displayHandler" ></AddWODialogue>
-	//ECInsertTime="NewWOHandler"
-}
 
 @code {
 	[Parameter]
@@ -140,11 +129,7 @@
 		GetMaxAndMinTimeInterval();
 	}
 
-	bool showAddWODiakogue = false;
-	void displayHandler(bool display)
-	{
-		showAddWODiakogue=display;
-	}
+
 	/*
 	void NewWOHandler(DateTime insertTime)
 	{

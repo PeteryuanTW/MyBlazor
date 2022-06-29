@@ -2,6 +2,18 @@
 @using MyBlazor.Shared.DataClass
 @inject StateContainer stateContainer
 <MyGanttChart allMachineStatus="@machineData" dateTimeID ="@dateTimeID"  jobs = "@jobs" bestDueTime="@bestDueTime"></MyGanttChart>
+<div style="margin-top:20px; margin-left:20px">
+	<button class="button is-info is-rounded is-light" style="border:none" @onclick="(()=>{showAddWODiakogue = true;})">
+	    <i class="oi oi-plus"></i>
+    </button>
+</div>
+
+
+@if (showAddWODiakogue)
+{
+	<AddWODialogue display="displayHandler" ></AddWODialogue>
+	//ECInsertTime="NewWOHandler"
+}
 
 @code {
 	public List<MachineData> machineData = new List<MachineData>();
@@ -25,6 +37,12 @@
 	public void Dispose()
 	{
 		stateContainer.OnCurrentSchedulingChange -= GetNewScheduling;
+	}
+
+	bool showAddWODiakogue = false;
+	void displayHandler(bool display)
+	{
+		showAddWODiakogue=display;
 	}
 
 	private void GetNewScheduling(SchedulingHistory newScheduling)
