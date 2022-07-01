@@ -74,6 +74,8 @@
 	//best record
 	private List<List<Job>> bestJobs = new();
 	private TimeSpan bestTime = TimeSpan.MaxValue;
+	private Dictionary<(string, string), DateTime> bestMachineNextAvailable = new();
+	private Dictionary<string, DateTime> bestWONextAvailable = new();
 
 	protected override void OnInitialized()
 	{
@@ -112,6 +114,7 @@
 		StateHasChanged();
 	}
 
+	//algo
 	private async Task StartGA()
 	{
 		stateContainer.UIStartGA();
@@ -133,11 +136,13 @@
 			{
 				bestTime = CalculateDueTime(woNextAvailable);
 				bestJobs = jobTypeMachineList;
+				bestMachineNextAvailable = machineNextAvailable;
+				bestWONextAvailable = woNextAvailable;
 			}
 			stateContainer.SetCurrentRound(i+1);
 			await Task.Delay(1);
 		}
-		SchedulingHistory newScheduling = new SchedulingHistory(DateTime.Now, bestJobs, bestTime);
+		SchedulingHistory newScheduling = new SchedulingHistory(DateTime.Now, bestJobs, bestTime, bestMachineNextAvailable, bestWONextAvailable);
 		stateContainer.SetCurrentScheduling(newScheduling);
 		stateContainer.AddSchedulingData(newScheduling);
 

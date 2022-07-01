@@ -1,4 +1,5 @@
 ﻿@page "/schedulingChart"
+@using System
 @using MyBlazor.Shared.DataClass
 @inject StateContainer stateContainer
 <MyGanttChart allMachineStatus="@machineData" dateTimeID ="@dateTimeID"  jobs = "@jobs" bestDueTime="@bestDueTime"></MyGanttChart>
@@ -11,26 +12,34 @@
 
 @if (showAddWODiakogue)
 {
-	<AddWODialogue display="displayHandler" ></AddWODialogue>
-	//ECInsertTime="NewWOHandler"
+	<AddWODialogue display="displayHandler" ECInsertTime="NewWOTimeHandler"></AddWODialogue>
 }
 
 @code {
 	public List<MachineData> machineData = new List<MachineData>();
+
+	private SchedulingHistory? currentSchedulingHistory;
 	private DateTime dateTimeID;
 	private List<List<Job>> jobs = new();
+	private Dictionary<(string, string), DateTime> machineNextAvailable;
+	private Dictionary<string, DateTime> woNextAvailable;
 	private TimeSpan bestDueTime = TimeSpan.Zero;
+
+
 
 	protected override Task OnInitializedAsync()
 	{
 		machineData = stateContainer.GetMachineData();
-		if (stateContainer.GetCurrentScheduling() != null)
+		currentSchedulingHistory = stateContainer.GetCurrentScheduling();
+		if (currentSchedulingHistory != null)
 		{
-			dateTimeID = stateContainer.GetCurrentScheduling().dataTimeID;
-		    jobs = stateContainer.GetCurrentScheduling().jobs;
-		    bestDueTime = stateContainer.GetCurrentScheduling().dueTime;
+			dateTimeID = currentSchedulingHistory.dataTimeID;
+			jobs = currentSchedulingHistory.jobs;
+			bestDueTime = currentSchedulingHistory.dueTime;
+			machineNextAvailable = currentSchedulingHistory.machineNextAvailable;
+			woNextAvailable = currentSchedulingHistory.woNextAvailable;
 		}
-		
+
 		stateContainer.OnCurrentSchedulingChange += GetNewScheduling;
 		return base.OnInitializedAsync();
 	}
@@ -47,9 +56,26 @@
 
 	private void GetNewScheduling(SchedulingHistory newScheduling)
 	{
+		currentSchedulingHistory = newScheduling;
 		dateTimeID = newScheduling.dataTimeID;
 		jobs = newScheduling.jobs;
 		bestDueTime = newScheduling.dueTime;
+		machineNextAvailable = newScheduling.machineNextAvailable;
+		woNextAvailable = newScheduling.woNextAvailable;
 		StateHasChanged();
+	}
+
+	private void NewWOTimeHandler(DateTime insertTime)
+	{
+		foreach (List<Job> typeJob in jobs)
+		{
+			foreach (Job job in typeJob)
+			{
+				if (job!=null && job.start >= insertTime)
+				{
+					Job reScheduleJob = new Job(job.wo, 1, job.duration);
+				}
+			}
+		}
 	}
 }

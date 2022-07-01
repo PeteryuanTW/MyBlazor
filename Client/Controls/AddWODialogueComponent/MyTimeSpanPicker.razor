@@ -1,0 +1,79 @@
+﻿<div class="columns">
+	<div class="column">
+		<input type="number" style="width:50px" @bind-value="_hour">
+	</div>
+	<div class="column">
+		hr
+	</div>
+	<div class="column">
+		<input type="number" style="width:50px" @bind-value="_minute">
+	</div>
+	<div class="column">
+		min
+	</div>
+	<div class="column">
+		<input type="number" style="width:50px" @bind-value="_second">
+	</div>
+	<div class="column">
+		s
+	</div>
+</div>
+@code {
+	[Parameter]
+	public string machineType { get; set; } = "";
+	public TimeSpan timeSpan = TimeSpan.Zero;
+	[Parameter]
+	public EventCallback<(string, TimeSpan)> costChange { get; set; }
+
+	private int hour = 0;
+	public int _hour
+	{
+		get
+		{
+			return hour;
+		}
+		set
+		{
+			if (value>=0)
+			{
+				hour = value;
+				timeSpan = new TimeSpan(value, timeSpan.Minutes, timeSpan.Seconds);
+				costChange.InvokeAsync((machineType, timeSpan));
+			}
+		}
+	}
+	private int minute = 0;
+	public int _minute
+	{
+		get
+		{
+			return minute;
+		}
+		set
+		{
+			if (value>=0 &&  value < 60)
+			{
+				minute = value;
+				timeSpan = new TimeSpan(timeSpan.Hours, value, timeSpan.Seconds);
+				costChange.InvokeAsync((machineType, timeSpan));
+			}
+		}
+	}
+	private int second = 0;
+	public int _second
+	{
+		get
+		{
+			return second;
+		}
+		set
+		{
+			if (value>=0 &&  value < 60)
+			{
+				second = value;
+				timeSpan = new TimeSpan(timeSpan.Hours, timeSpan.Minutes, value);
+				costChange.InvokeAsync((machineType, timeSpan));
+			}
+		}
+	}
+}

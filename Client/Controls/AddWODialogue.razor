@@ -1,18 +1,57 @@
 ﻿@using MyBlazor.Shared.DataClass
 @inject IToastService toastService
+@inject StateContainer stateContainer
 
 <div class="modal fade show" style="display:block; background-color: rgba(10,10,10,.4);" aria-modal="true" role="dialog">
     <div class="modal-dialog modal-xl modal-dialog-centered" style="width:100%">
         <div class="modal-content" style="width:auto">
             <div class="modal-header">
-                header
+                <h5 class="modal-title">
+                    <b>
+                        Add New Order
+                    </b>
+                </h5>
+                <label class="oi oi-x" style="align-self:start" @onclick="CloseDialogue"></label>
             </div>
             <div class="modal-body">
-                <input type="datetime-local" @bind-value="insertTime" style="">
+                <table>
+                    <tr>
+                        <td>
+                            <b>
+                                <label style="font:bold; margin-right:10px">Order Name:</label>
+                            </b>
+                        </td>
+                        <td>
+                            <input type="text" style="width:100%" @bind-value="woName">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                             <b>
+                                <label style="font:bold; margin-right:10px">Insert Time:</label>
+                            </b>
+                        </td>
+                        <td>
+                            <input type="datetime-local" style="width:100%" @bind-value="insertTime">
+                        </td>
+                    </tr>
+                </table>
+                <table class="table table-striped">
+                    @for(int i = 0; i < machineTypes.Count; i++)
+                    {
+                       <tr>
+                           <td>
+                               <label style="font:bold; margin-right:10px">@machineTypes[i].machineType</label>
+                           </td>
+                           <td>
+                               <MyTimeSpanPicker machineType=@machineTypes[i].machineType costChange="CostTimeHandler"></MyTimeSpanPicker>
+                           </td>
+                       </tr>
+                    }
+                </table>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-primary" @onclick="AddNewWO">Insert</button>
-                <button type="button" class="btn btn-secondary" @onclick="CloseDialogue">Dispose</button>
             </div>
         </div>
     </div>
@@ -23,12 +62,22 @@
     public EventCallback<bool> display { get; set; }
     [Parameter]
     public EventCallback<DateTime> ECInsertTime { get; set; }
+    private string woName = "";
     private DateTime insertTime = DateTime.Now;
+    private List<MachineTypeList> machineTypes = new();
+    private Dictionary<string ,TimeSpan> costTimes = new();
+    string status = "";
+
     protected override void OnParametersSet()
     {
         base.OnParametersSet();
     }
-    string status = "";
+
+    protected override Task OnInitializedAsync()
+    {
+        InitMachineData();
+        return base.OnInitializedAsync();
+    }
 
     private void machineStyle(int machineStatus)// green:available red:unavailable white:null
     {
@@ -44,6 +93,21 @@
                 status = "";
                 break;
         }
+    }
+
+    private void InitMachineData()
+    {
+        machineTypes = stateContainer.GetMachineTable();
+        costTimes = new();
+        for (int i = 0; i < machineTypes.Count; i++)
+        {
+            costTimes.Add(machineTypes[i].machineType ,TimeSpan.Zero);
+        }
+    }
+
+    private void CostTimeHandler((string, TimeSpan) newCost)
+    {
+        costTimes[newCost.Item1] = newCost.Item2;
     }
 
     private void AddNewWO()
