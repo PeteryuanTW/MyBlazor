@@ -62,16 +62,18 @@
 	private int round;
 	private string GABtnCss = "";
 
-	//static data
+	//static data without rescheduling
 	private List<WOJobs> allWOJobs = new();
 	private Dictionary<string, int> machineTypesAndCount = new();
 	private List<MachineTypeList> machineTypeLists = new();
 	private List<int> typeJobsCount = new();
+	//complete after scheduling
 	private List<List<Job>> jobTypeMachineList = new();
 	//dynamic programig
 	private Dictionary<(string, string), DateTime> machineNextAvailable = new();
 	private Dictionary<string, DateTime> woNextAvailable = new();
-	//best record
+
+	//history date record
 	private List<List<Job>> bestJobs = new();
 	private TimeSpan bestTime = TimeSpan.MaxValue;
 	private Dictionary<(string, string), DateTime> bestMachineNextAvailable = new();
@@ -130,11 +132,12 @@
 			InitMachineNextAvailable();
 			InitWONextAvailable();
 			jobTypeMachineList = InitMachineBufferByJobs();
-			AssignJobsToMachineBuffer();
-			FillJobsTimes();
-			if (CalculateDueTime(woNextAvailable) < bestTime)
+			GenericAlgo.AssignJobsToMachineBuffer(allWOJobs, ref jobTypeMachineList);
+			GenericAlgo.FillJobsTimes(ref jobTypeMachineList, machineTypeLists, typeJobsCount, ref machineNextAvailable, ref  woNextAvailable);
+			TimeSpan newTime = GenericAlgo.CalculateDueTime(allWOJobs, woNextAvailable);
+			if (newTime < bestTime)
 			{
-				bestTime = CalculateDueTime(woNextAvailable);
+				bestTime = newTime;
 				bestJobs = jobTypeMachineList;
 				bestMachineNextAvailable = machineNextAvailable;
 				bestWONextAvailable = woNextAvailable;
@@ -200,71 +203,6 @@
 			typeJobsCount.Add(typeJobs);
 			int typeAmount = machineTypesAndCount.ElementAt(i).Value;
 			res.Add(new List<Job>(new Job[typeJobs * typeAmount]));
-		}
-		return res;
-	}
-
-	private void AssignJobsToMachineBuffer()
-	{
-		for (int i = 0; i <  allWOJobs.Count; i++ )//get job from wo_job list
-		{
-			for (int j = 0; j < allWOJobs[i].processCost.Count; j++)//job types
-			{
-				if (allWOJobs[i].processCost[j] != TimeSpan.Zero)
-				{
-					int totalIndex;
-					int index;
-					do
-					{
-						totalIndex = jobTypeMachineList[j].Count;
-						Random r = new Random();
-						index = r.Next(0, totalIndex);
-					} while (jobTypeMachineList[j][index] != null);
-					jobTypeMachineList[j][index] = new Job(allWOJobs[i].wo, 0,allWOJobs[i].processCost[j]);
-				}
-			}
-
-		}
-	}
-
-	private void FillJobsTimes()
-	{
-		for (int i = 0; i < jobTypeMachineList.Count; i++)
-		{
-			string type = machineTypeLists[i].machineType;
-			int typeAmount = typeJobsCount[i];
-			for (int j = 0; j < jobTypeMachineList[i].Count; j++)
-			{
-				if (jobTypeMachineList[i][j] != null)
-				{
-					int typeIndex = j / typeAmount;
-					string index = machineTypeLists[i].machineIndexList[typeIndex];
-
-					Job currentJob = jobTypeMachineList[i][j];
-					currentJob.machine = type;
-					currentJob.index = index;
-
-					DateTime startAt = machineNextAvailable[(type, index)] > woNextAvailable[currentJob.wo] ? machineNextAvailable[(type, index)] : woNextAvailable[currentJob.wo];
-
-					currentJob.SetStartTime(startAt);
-					machineNextAvailable[(type, index)] = currentJob.end;
-					woNextAvailable[currentJob.wo] = currentJob.end;
-
-				}
-			}
-		}
-	}
-	private TimeSpan CalculateDueTime(Dictionary<string, DateTime> current_woNextAvailable)
-	{
-		TimeSpan res = TimeSpan.Zero;
-		foreach (WOJobs woJob in allWOJobs)
-		{
-			DateTime expect = woJob.dueTime;
-			DateTime actual = current_woNextAvailable[woJob.wo];
-			if (actual > expect)
-			{
-				res += (actual - expect);
-			}
 		}
 		return res;
 	}
