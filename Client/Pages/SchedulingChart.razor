@@ -87,9 +87,9 @@
 			if (timeAndWO.Item2.processCost[i] != TimeSpan.Zero)
 			{
 				int originalLength = copyJobs[i].Count;
-				for (int j = originalLength-1; j >= 0; j -= jobCount)
+				for (int j = originalLength; j > 0; j -= jobCount)
 				{
-					copyJobs[i].Insert(j, new Job("tmp", 1, TimeSpan.Zero));
+					copyJobs[i].Insert(j, new Job());
 				}
 			}
 		}
@@ -100,7 +100,7 @@
 		{
 			for (int j = 0; j<copyJobs[i].Count; j++)
 			{
-				if (copyJobs[i][j]!=null && copyJobs[i][j].start >= timeAndWO.Item1)//job needs to be rescheduled
+				if (!copyJobs[i][j].idle && copyJobs[i][j].start >= timeAndWO.Item1)//job needs to be rescheduled
 				{
 					if (copyMachineNextAvailable[(copyJobs[i][j].machine, copyJobs[i][j].index)] > copyJobs[i][j].start)
 					{
@@ -128,7 +128,7 @@
 						jobReSchedule.Add(new WOJobs(copyJobs[i][j].wo, new List<TimeSpan>(new TimeSpan[typeCount]), due));
 					}
 					jobReSchedule.Find(x => x.wo == copyJobs[i][j].wo).processCost[index] = copyJobs[i][j].duration;
-					copyJobs[i][j] = null;
+					copyJobs[i][j] = new Job();
 
 
 				}

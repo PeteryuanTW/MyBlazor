@@ -23,7 +23,7 @@ namespace MyBlazor.Shared.DataClass
 							totalIndex = jobTypeMachineList[j].Count;
 							Random r = new Random();
 							index = r.Next(0, totalIndex);
-						} while (jobTypeMachineList[j][index] != null);
+						} while (!jobTypeMachineList[j][index].idle);
 						jobTypeMachineList[j][index] = new Job(allWOJobs[i].wo, 0, allWOJobs[i].processCost[j]);
 					}
 				}
@@ -46,7 +46,7 @@ namespace MyBlazor.Shared.DataClass
 							totalIndex = jobTypeMachineList[j].Count;
 							Random r = new Random();
 							index = r.Next(0, totalIndex);
-						} while (jobTypeMachineList[j][index] != null && CheckLaterThanFixJobs(index, machineCounts.ElementAt(i).Value, jobTypeMachineList[i]));// 
+						} while (!jobTypeMachineList[j][index].idle || !CheckLaterThanFixJobs(index, machineCounts.ElementAt(i).Value, jobTypeMachineList[i]));// 
 						jobTypeMachineList[j][index] = new Job(allWOJobs[i].wo, 1, allWOJobs[i].processCost[j]);
 					}
 				}
@@ -61,7 +61,7 @@ namespace MyBlazor.Shared.DataClass
 			int end = index / amountInOneMachine * amountInOneMachine + amountInOneMachine;
 			for (int i = index; i < end; i++)
 			{
-				if (jobTypeMachineList[i] != null && jobTypeMachineList[i].start != DateTime.MinValue)//only new job behind is allowed
+				if (!jobTypeMachineList[i].idle && jobTypeMachineList[i].start != DateTime.MinValue)//only new job behind is allowed
 				{
 					res = false;
 					break;
@@ -78,7 +78,7 @@ namespace MyBlazor.Shared.DataClass
 				int typeAmount = typeJobsCount[i];
 				for (int j = 0; j < jobTypeMachineList[i].Count; j++)
 				{
-					if (jobTypeMachineList[i][j] != null && jobTypeMachineList[i][j].start == DateTime.MinValue)
+					if (!jobTypeMachineList[i][j].idle && jobTypeMachineList[i][j].start == DateTime.MinValue)
 					{
 						int typeIndex = j / typeAmount;
 						string index = machineTypeLists[i].machineIndexList[typeIndex];

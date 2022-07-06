@@ -102,21 +102,21 @@
 			foreach (Job job in jobsList)
 			{
 				if (job != null)
-			    {
-				    var targetMachine = machineWOJobs.Find(x=>x.machineName == job.machine && x.index == job.index);
-			        if (targetMachine != null)
-			        {
-				        var targetWO = targetMachine.woJobsInMachine.Find(x => x.wo == job.wo);
-				        if (targetWO != null)
-				        {
-					        targetWO.woStatus = job.generateType;
-				        }
-				        else
-				        {
-					        targetMachine.woJobsInMachine.Add(new WOJobInMachine(job.wo, job.generateType, new StartTimeAndEndTime(job.start, job.end)));
-				        }
-			        }
-			    }
+				{
+					var targetMachine = machineWOJobs.Find(x=>x.machineName == job.machine && x.index == job.index);
+					if (targetMachine != null)
+					{
+						var targetWO = targetMachine.woJobsInMachine.Find(x => x.wo == job.wo);
+						if (targetWO != null)
+						{
+							targetWO.woStatus = job.generateType;
+						}
+						else
+						{
+							targetMachine.woJobsInMachine.Add(new WOJobInMachine(job.wo, job.generateType, new StartTimeAndEndTime(job.start, job.end)));
+						}
+					}
+				}
 			}
 		}
 		foreach(MachineWOJobs woList in machineWOJobs)
@@ -146,10 +146,12 @@
 		}
 		if (allTimes.Count != 0)
 		{
-			DateTime tmp_minTime = allTimes.Min();
-		    DateTime tmp_maxTime = allTimes.Max();
-		    minTime = new DateTime(tmp_minTime.Year, tmp_minTime.Month, tmp_minTime.Day, tmp_minTime.Hour, 0, 0, 0);
-		    maxTime = new DateTime(tmp_maxTime.Year, tmp_maxTime.Month, tmp_maxTime.Day, tmp_maxTime.Hour+1, 0, 0, 0);
+			allTimes.Sort();
+			DateTime tmp_minTime = allTimes[0];
+			DateTime tmp_maxTime = allTimes[^1];
+			minTime = new DateTime(tmp_minTime.Year, tmp_minTime.Month, tmp_minTime.Day, tmp_minTime.Hour, 0, 0, 0);
+			tmp_maxTime = tmp_maxTime.AddHours(1);
+			maxTime = new DateTime(tmp_maxTime.Year, tmp_maxTime.Month, tmp_maxTime.Day, tmp_maxTime.Hour, 0, 0, 0);
 		    interval = maxTime - minTime;
 		}
 

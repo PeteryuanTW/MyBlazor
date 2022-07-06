@@ -9,6 +9,7 @@
         public DateTime start;
         public TimeSpan duration;
         public DateTime end;
+        public bool idle;
 
         public Job(string wo, int generateType, TimeSpan duration)
         {
@@ -19,8 +20,15 @@
             this.index = "";
             start = DateTime.MinValue;
             end = DateTime.MinValue;
+            idle = false;
         }
-
+        public Job()
+        {
+            this.wo = "";
+            this.machine = "";
+            this.index = "";
+            idle = true;
+        }
         public void SetStartTime(DateTime start)
         {
             this.start = start;

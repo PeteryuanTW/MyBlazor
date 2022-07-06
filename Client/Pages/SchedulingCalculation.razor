@@ -202,7 +202,8 @@
 			}
 			typeJobsCount.Add(typeJobs);
 			int typeAmount = machineTypesAndCount.ElementAt(i).Value;
-			res.Add(new List<Job>(new Job[typeJobs * typeAmount]));
+			List<Job> tmp =  Enumerable.Repeat(new Job(), typeJobs * typeAmount).ToList();
+			res.Add(tmp);
 		}
 		return res;
 	}
