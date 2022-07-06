@@ -1,5 +1,6 @@
 ﻿@page "/schedulingChart"
 @using System
+@using System.Collections.Generic;
 @using MyBlazor.Shared.DataClass
 @inject StateContainer stateContainer
 <MyGanttChart allMachineStatus="@machineData" dateTimeID ="@dateTimeID"  jobs = "@jobs" bestDueTime="@bestDueTime"></MyGanttChart>
@@ -12,19 +13,26 @@
 
 @if (showAddWODiakogue)
 {
-	<AddWODialogue display="displayHandler" ECInsertTime="NewWOTimeHandler"></AddWODialogue>
+	<AddWODialogue display="displayHandler" ECNewWO="NewWOInsertHandler"></AddWODialogue>
 }
 
 @code {
+	//static data
 	public List<MachineData> machineData = new List<MachineData>();
-
+	private Dictionary<string, int>? machineTypeCount;
+	//best history
 	private SchedulingHistory? currentSchedulingHistory;
 	private DateTime dateTimeID;
 	private List<List<Job>> jobs = new();
 	private Dictionary<(string, string), DateTime> machineNextAvailable;
 	private Dictionary<string, DateTime> woNextAvailable;
 	private TimeSpan bestDueTime = TimeSpan.Zero;
-
+	//tmp clone when add wo
+	private List<List<Job>> copyJobs = new();
+	private Dictionary<(string, string), DateTime> copyMachineNextAvailable;
+	private Dictionary<string, DateTime> copyWONextAvailable;
+	//reschedule
+	private List<WOJobs> jobReSchedule = new();
 
 
 	protected override Task OnInitializedAsync()
@@ -65,17 +73,94 @@
 		StateHasChanged();
 	}
 
-	private void NewWOTimeHandler(DateTime insertTime)
+	private void NewWOInsertHandler((DateTime, WOJobs) timeAndWO)
 	{
-		foreach (List<Job> typeJob in jobs)
+		InitCopy();
+		jobReSchedule = new();
+		jobReSchedule.Add(timeAndWO.Item2);
+
+		Dictionary<string, int> machineTypeCount = stateContainer.GetMachineTypeCount();
+
+		for(int i = 0; i < timeAndWO.Item2.processCost.Count; i++)
 		{
-			foreach (Job job in typeJob)
+			int jobCount = copyJobs[i].Count/machineTypeCount.ElementAt(i).Value;
+			if (timeAndWO.Item2.processCost[i] != TimeSpan.Zero)
 			{
-				if (job!=null && job.start >= insertTime)
+				int originalLength = copyJobs[i].Count;
+				for (int j = originalLength-1; j >= 0; j -= jobCount)
 				{
-					Job reScheduleJob = new Job(job.wo, 1, job.duration);
+					copyJobs[i].Insert(j, new Job("tmp", 1, TimeSpan.Zero));
 				}
 			}
 		}
+
+		int typeCount = copyJobs.Count;
+		//rebuild the job need to be rescheduled
+		for (int i = 0; i<copyJobs.Count; i++)
+		{
+			for (int j = 0; j<copyJobs[i].Count; j++)
+			{
+				if (copyJobs[i][j]!=null && copyJobs[i][j].start >= timeAndWO.Item1)//job needs to be rescheduled
+				{
+					if (copyMachineNextAvailable[(copyJobs[i][j].machine, copyJobs[i][j].index)] > copyJobs[i][j].start)
+					{
+						copyMachineNextAvailable[(copyJobs[i][j].machine, copyJobs[i][j].index)] = copyJobs[i][j].start;
+					}
+					if (copyWONextAvailable[copyJobs[i][j].wo] > copyJobs[i][j].start)
+					{
+						copyWONextAvailable[copyJobs[i][j].wo] = copyJobs[i][j].start;
+					}
+					string currentType = copyJobs[i][j].machine;
+					int index = -1;
+					for (int k = 0; k < machineTypeCount.Count; j++)
+					{
+						if (machineTypeCount.ElementAt(i).Key == currentType)
+						{
+							index = machineTypeCount.ElementAt(i).Value;
+							break;
+						}
+					}
+
+					DateTime due = stateContainer.GetWOJobs().Find(x => x.wo == copyJobs[i][j].wo).dueTime;
+
+					if (!jobReSchedule.Exists(x => x.wo == copyJobs[i][j].wo))
+					{
+						jobReSchedule.Add(new WOJobs(copyJobs[i][j].wo, new List<TimeSpan>(new TimeSpan[typeCount]), due));
+					}
+					jobReSchedule.Find(x => x.wo == copyJobs[i][j].wo).processCost[index] = copyJobs[i][j].duration;
+					copyJobs[i][j] = null;
+
+
+				}
+			}
+		}
+
+		GenericAlgo.ReassignJobsToMachineBuffer(jobReSchedule, ref copyJobs, machineTypeCount);
+		GenericAlgo.FillJobsTimes(ref copyJobs, stateContainer.GetMachineTable(), GetTypeJobsCount(copyJobs, machineTypeCount), ref copyMachineNextAvailable, ref copyWONextAvailable);
+		SchedulingHistory newScheduling = new SchedulingHistory(DateTime.Now, copyJobs, TimeSpan.Zero, copyMachineNextAvailable, copyWONextAvailable);
+		stateContainer.SetCurrentScheduling(newScheduling);
+		stateContainer.AddSchedulingData(newScheduling);
+		//GenericAlgo.CalculateDueTime(copyJobs, copyWONextAvailable)
+	}
+
+	private void InitCopy()//copy job lists and dynamic programing dicts
+	{
+		copyJobs = new();
+		foreach (List<Job> jobList in jobs)
+		{
+			copyJobs.Add(jobList.ToList());
+		}
+		copyMachineNextAvailable = new Dictionary<(string, string), DateTime>(machineNextAvailable);
+		copyWONextAvailable = new Dictionary<string, DateTime>(woNextAvailable);
+	}
+
+	private List<int> GetTypeJobsCount(List<List<Job>> jobs, Dictionary<string, int> machineTypeCount)
+	{
+		List<int> res = new();
+		for (int i = 0; i < jobs.Count; i++)
+		{
+			res.Add(jobs.Count / machineTypeCount.ElementAt(i).Value);
+		}
+		return res;
 	}
 }

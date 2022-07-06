@@ -31,6 +31,45 @@ namespace MyBlazor.Shared.DataClass
 			}
 		}
 
+		public static void ReassignJobsToMachineBuffer(List<WOJobs> allWOJobs, ref List<List<Job>> jobTypeMachineList, Dictionary<string, int> machineCounts)
+		{
+			for (int i = 0; i < allWOJobs.Count; i++)//get job from wo_job list
+			{
+				for (int j = 0; j < allWOJobs[i].processCost.Count; j++)//job types
+				{
+					if (allWOJobs[i].processCost[j] != TimeSpan.Zero)
+					{
+						int totalIndex;
+						int index;
+						do
+						{
+							totalIndex = jobTypeMachineList[j].Count;
+							Random r = new Random();
+							index = r.Next(0, totalIndex);
+						} while (jobTypeMachineList[j][index] != null && CheckLaterThanFixJobs(index, machineCounts.ElementAt(i).Value, jobTypeMachineList[i]));// 
+						jobTypeMachineList[j][index] = new Job(allWOJobs[i].wo, 1, allWOJobs[i].processCost[j]);
+					}
+				}
+
+			}
+		}
+		
+		private static bool CheckLaterThanFixJobs(int index, int typeMachineCounts, List<Job> jobTypeMachineList)
+		{
+			bool res = true;
+			int amountInOneMachine = jobTypeMachineList.Count/ typeMachineCounts;
+			int end = index / amountInOneMachine * amountInOneMachine + amountInOneMachine;
+			for (int i = index; i < end; i++)
+			{
+				if (jobTypeMachineList[i] != null && jobTypeMachineList[i].start != DateTime.MinValue)//only new job behind is allowed
+				{
+					res = false;
+					break;
+				}
+			}
+			return res;
+		}
+		
 		public static void FillJobsTimes(ref List<List<Job>> jobTypeMachineList, List<MachineTypeList> machineTypeLists, List<int> typeJobsCount, ref Dictionary<(string, string), DateTime> machineNextAvailable, ref Dictionary<string, DateTime> woNextAvailable)
 		{
 			for (int i = 0; i < jobTypeMachineList.Count; i++)
@@ -39,7 +78,7 @@ namespace MyBlazor.Shared.DataClass
 				int typeAmount = typeJobsCount[i];
 				for (int j = 0; j < jobTypeMachineList[i].Count; j++)
 				{
-					if (jobTypeMachineList[i][j] != null)
+					if (jobTypeMachineList[i][j] != null && jobTypeMachineList[i][j].start == DateTime.MinValue)
 					{
 						int typeIndex = j / typeAmount;
 						string index = machineTypeLists[i].machineIndexList[typeIndex];

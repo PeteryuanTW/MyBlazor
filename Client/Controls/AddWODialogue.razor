@@ -37,16 +37,16 @@
                     </tr>
                 </table>
                 <table class="table table-striped">
-                    @for(int i = 0; i < machineTypes.Count; i++)
+                    @for (int i = 0; i < machineTypes.Count; i++)
                     {
-                       <tr>
-                           <td>
-                               <label style="font:bold; margin-right:10px">@machineTypes[i].machineType</label>
-                           </td>
-                           <td>
-                               <MyTimeSpanPicker machineType=@machineTypes[i].machineType costChange="CostTimeHandler"></MyTimeSpanPicker>
-                           </td>
-                       </tr>
+                        <tr>
+                            <td>
+                                <label style="font:bold; margin-right:10px">@machineTypes[i].machineType</label>
+                            </td>
+                            <td>
+                                <MyTimeSpanPicker machineType=@machineTypes[i].machineType costChange="CostTimeHandler"></MyTimeSpanPicker>
+                            </td>
+                        </tr>
                     }
                 </table>
             </div>
@@ -61,7 +61,7 @@
     [Parameter]
     public EventCallback<bool> display { get; set; }
     [Parameter]
-    public EventCallback<DateTime> ECInsertTime { get; set; }
+    public EventCallback<(DateTime, WOJobs)> ECNewWO{get; set;}
     private string woName = "";
     private DateTime insertTime = DateTime.Now;
     private List<MachineTypeList> machineTypes = new();
@@ -112,7 +112,17 @@
 
     private void AddNewWO()
     {
-        ECInsertTime.InvokeAsync(insertTime);
+        if (woName == "")
+        {
+            return;
+        }
+        List<TimeSpan> costList = new();
+        costTimes.OrderBy(x => x.Key);
+        foreach (TimeSpan cost in costTimes.Values)
+        {
+            costList.Add(cost);
+        }
+        ECNewWO.InvokeAsync((insertTime, new WOJobs(woName, costList, DateTime.Now.AddHours(3))));
         CloseDialogue();
         toastService.ShowSuccess("insert success");
     }

@@ -26,5 +26,6 @@
             this.start = start;
             end = start + duration;
         }
+
     }
 }
