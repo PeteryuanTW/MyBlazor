@@ -87,6 +87,10 @@ namespace MyBlazor.Shared.DataClass
 						currentJob.machine = type;
 						currentJob.index = index;
 
+						if (!woNextAvailable.ContainsKey(currentJob.wo))
+						{
+							woNextAvailable.Add(currentJob.wo, DateTime.MinValue);
+						}
 						DateTime startAt = machineNextAvailable[(type, index)] > woNextAvailable[currentJob.wo] ? machineNextAvailable[(type, index)] : woNextAvailable[currentJob.wo];
 
 						currentJob.SetStartTime(startAt);

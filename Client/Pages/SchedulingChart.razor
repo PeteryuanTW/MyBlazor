@@ -159,7 +159,15 @@
 		List<int> res = new();
 		for (int i = 0; i < jobs.Count; i++)
 		{
-			res.Add(jobs.Count / machineTypeCount.ElementAt(i).Value);
+			int eachTypeCount = 0;
+			for (int j = 0; j < jobs[i].Count; j++)
+			{
+				if (!jobs[i][j].idle)
+				{
+					eachTypeCount++;
+				}
+			}
+			res.Add(eachTypeCount);
 		}
 		return res;
 	}
