@@ -121,9 +121,11 @@
 	{
 		stateContainer.UIStartGA();
 		if (!CheckWOJobsAndMachine())
-		{
+		{//make sure type cost list length in wo is same as type machine count
 			return;
 		}
+		typeJobsCount = GenericAlgo.InitTypeJobCounts(allWOJobs);
+		jobTypeMachineList = GenericAlgo.InitMachineBufferByJobs(allWOJobs,typeJobsCount,machineTypesAndCount);
 		InitWONextAvailable();
 		machineTypeLists = stateContainer.GetMachineTable();
 
@@ -131,14 +133,14 @@
 		{
 			InitMachineNextAvailable();
 			InitWONextAvailable();
-			jobTypeMachineList = InitMachineBufferByJobs();
-			GenericAlgo.AssignJobsToMachineBuffer(allWOJobs, ref jobTypeMachineList);
-			GenericAlgo.FillJobsTimes(ref jobTypeMachineList, machineTypeLists, typeJobsCount, ref machineNextAvailable, ref  woNextAvailable);
+			List<List<Job>> copyMachineBuffer = GenericAlgo.CopyMachineBuffer(jobTypeMachineList);
+			GenericAlgo.AssignJobsToMachineBuffer(allWOJobs, ref copyMachineBuffer);
+			GenericAlgo.FillJobsTimes(ref copyMachineBuffer, machineTypeLists, typeJobsCount, ref machineNextAvailable, ref  woNextAvailable);
 			TimeSpan newTime = GenericAlgo.CalculateDueTime(allWOJobs, woNextAvailable);
 			if (newTime < bestTime)
 			{
 				bestTime = newTime;
-				bestJobs = jobTypeMachineList;
+				bestJobs = copyMachineBuffer;
 				bestMachineNextAvailable = machineNextAvailable;
 				bestWONextAvailable = woNextAvailable;
 			}
@@ -185,7 +187,7 @@
 		}
 		return true;
 	}
-
+	/*
 	private List<List<Job>> InitMachineBufferByJobs()
 	{
 		List<List<Job>> res = new();
@@ -206,5 +208,5 @@
 			res.Add(tmp);
 		}
 		return res;
-	}
+	}*/
 }

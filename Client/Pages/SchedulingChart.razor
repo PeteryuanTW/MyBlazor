@@ -18,7 +18,7 @@
 
 @code {
 	//static data
-	public List<MachineData> machineData = new List<MachineData>();
+	public List<MachineData> machineData = new();
 	private Dictionary<string, int>? machineTypeCount;
 	//best history
 	private SchedulingHistory? currentSchedulingHistory;
@@ -32,7 +32,7 @@
 	private Dictionary<(string, string), DateTime> copyMachineNextAvailable;
 	private Dictionary<string, DateTime> copyWONextAvailable;
 	//reschedule
-	private List<WOJobs> jobReSchedule = new();
+	private List<WOJobs> jobReSchedule = new();//only contain the wo job list for rescheduling
 
 
 	protected override Task OnInitializedAsync()
@@ -75,6 +75,7 @@
 
 	private void NewWOInsertHandler((DateTime, WOJobs) timeAndWO)
 	{
+		stateContainer.AddWORequirements(timeAndWO.Item2);
 		InitCopy();
 		jobReSchedule = new();
 		jobReSchedule.Add(timeAndWO.Item2);
@@ -102,6 +103,7 @@
 			{
 				if (!copyJobs[i][j].idle && copyJobs[i][j].start >= timeAndWO.Item1)//job needs to be rescheduled
 				{
+					//reset dynamic programing dict
 					if (copyMachineNextAvailable[(copyJobs[i][j].machine, copyJobs[i][j].index)] > copyJobs[i][j].start)
 					{
 						copyMachineNextAvailable[(copyJobs[i][j].machine, copyJobs[i][j].index)] = copyJobs[i][j].start;
@@ -134,22 +136,22 @@
 				}
 			}
 		}
-
+		//copy job list and dicts from here because the init is finshed
+		for (int i = 0; i < stateContainer.GetIterations(); i++)
+		{
+			
+		}
 		GenericAlgo.ReassignJobsToMachineBuffer(jobReSchedule, ref copyJobs, machineTypeCount);
 		GenericAlgo.FillJobsTimes(ref copyJobs, stateContainer.GetMachineTable(), GetTypeJobsCount(copyJobs, machineTypeCount), ref copyMachineNextAvailable, ref copyWONextAvailable);
 		SchedulingHistory newScheduling = new SchedulingHistory(DateTime.Now, copyJobs, TimeSpan.Zero, copyMachineNextAvailable, copyWONextAvailable);
 		stateContainer.SetCurrentScheduling(newScheduling);
 		stateContainer.AddSchedulingData(newScheduling);
-		//GenericAlgo.CalculateDueTime(copyJobs, copyWONextAvailable)
+		GenericAlgo.CalculateDueTime(stateContainer.GetWOJobs(), copyWONextAvailable);
 	}
 
 	private void InitCopy()//copy job lists and dynamic programing dicts
 	{
-		copyJobs = new();
-		foreach (List<Job> jobList in jobs)
-		{
-			copyJobs.Add(jobList.ToList());
-		}
+		copyJobs = GenericAlgo.CopyMachineBuffer(jobs);
 		copyMachineNextAvailable = new Dictionary<(string, string), DateTime>(machineNextAvailable);
 		copyWONextAvailable = new Dictionary<string, DateTime>(woNextAvailable);
 	}

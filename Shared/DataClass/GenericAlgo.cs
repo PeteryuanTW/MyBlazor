@@ -8,6 +8,48 @@ namespace MyBlazor.Shared.DataClass
 {
     public static class GenericAlgo
     {
+
+		public static List<int> InitTypeJobCounts(List<WOJobs> allWOJobs)
+		{
+			List<int> res = new();
+			for (int i = 0; i < allWOJobs[0].processCost.Count; i++)
+			{
+				int typeJobs = 0;//amount of each type of jobs
+				for (int j = 0; j < allWOJobs.Count; j++)
+				{
+					if (allWOJobs[j].processCost[i] != TimeSpan.Zero)
+					{
+						typeJobs++;
+					}
+				}
+				res.Add(typeJobs);
+			}
+			return res;
+		}
+		public static List<List<Job>> InitMachineBufferByJobs(List<WOJobs> allWOJobs, List<int> typeJobsCount, Dictionary<string, int> machineTypesAndCount)
+		{
+			List<List<Job>> res = new();
+
+			for (int i = 0; i < allWOJobs[0].processCost.Count; i++)
+			{
+				int typeAmount = machineTypesAndCount.ElementAt(i).Value;
+				List<Job> tmp = Enumerable.Repeat(new Job(), typeJobsCount[i] * typeAmount).ToList();
+				res.Add(tmp);
+			}
+			return res;
+		}
+
+		public static List<List<Job>> CopyMachineBuffer(List<List<Job>> jobs)
+		{
+			List<List<Job>>  res = new();
+			foreach (List<Job> jobList in jobs)
+			{
+				res.Add(jobList.ToList());
+			}
+			return res;
+		}
+
+		//assign type jobs in wo to empty machine list with index
 		public static void AssignJobsToMachineBuffer(List<WOJobs> allWOJobs, ref List<List<Job>> jobTypeMachineList)
 		{
 			for (int i = 0; i < allWOJobs.Count; i++)//get job from wo_job list
@@ -30,7 +72,7 @@ namespace MyBlazor.Shared.DataClass
 
 			}
 		}
-
+		//assign type jobs in wo to machine list with index
 		public static void ReassignJobsToMachineBuffer(List<WOJobs> allWOJobs, ref List<List<Job>> jobTypeMachineList, Dictionary<string, int> machineCounts)
 		{
 			for (int i = 0; i < allWOJobs.Count; i++)//get job from wo_job list
@@ -46,14 +88,14 @@ namespace MyBlazor.Shared.DataClass
 							totalIndex = jobTypeMachineList[j].Count;
 							Random r = new Random();
 							index = r.Next(0, totalIndex);
-						} while (!jobTypeMachineList[j][index].idle || !CheckLaterThanFixJobs(index, machineCounts.ElementAt(i).Value, jobTypeMachineList[i]));// 
+						} while (!jobTypeMachineList[j][index].idle || !CheckLaterThanFixJobs(index, machineCounts.ElementAt(i).Value, jobTypeMachineList[i]));
 						jobTypeMachineList[j][index] = new Job(allWOJobs[i].wo, 1, allWOJobs[i].processCost[j]);
 					}
 				}
 
 			}
 		}
-		
+		//check assign position in machine is valid
 		private static bool CheckLaterThanFixJobs(int index, int typeMachineCounts, List<Job> jobTypeMachineList)
 		{
 			bool res = true;
@@ -70,6 +112,7 @@ namespace MyBlazor.Shared.DataClass
 			return res;
 		}
 		
+
 		public static void FillJobsTimes(ref List<List<Job>> jobTypeMachineList, List<MachineTypeList> machineTypeLists, List<int> typeJobsCount, ref Dictionary<(string, string), DateTime> machineNextAvailable, ref Dictionary<string, DateTime> woNextAvailable)
 		{
 			for (int i = 0; i < jobTypeMachineList.Count; i++)
