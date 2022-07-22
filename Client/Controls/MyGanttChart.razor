@@ -1,9 +1,9 @@
 ﻿@using MyBlazor.Shared.DataClass
-
-@if (jobs != null && dateTimeID != DateTime.MinValue)
+<!--jobs != null && dateTimeID != DateTime.MinValue-->
+@if (jobs != null)
 {
 	<label class="oi oi-map-marker" style="font-size:15px; text-align:center; margin-left:20px" text-align:center"></label>
-	<label style="font-size:20px; text-align:center; margin-left:15px">@dateTimeID.ToString("yyyy/MM/dd HH:mm:ss")</label>
+	<label style="font-size:20px; text-align:center; margin-left:15px">@index</label>
 	<br>
 	<label style="font-size:25px; text-align:center; margin-left:20px">@minTime.ToString("yyyy MM/dd hh:mm:ss")</label>
 	<label class="oi oi-chevron-right" style="font-size:20px; text-align:center; margin-left:20px"></label>
@@ -66,8 +66,11 @@
 	public List<MachineData> allMachineStatus { get; set; } = new List<MachineData>();//only machine
 	[Parameter]
 	public List<MachineWOJobs> machineWOJobs { get; set;}= new List<MachineWOJobs>();//group by machine
+	/*
 	[Parameter]
-	public DateTime dateTimeID { get; set; }
+	public DateTime dateTimeID { get; set; }*/
+	[Parameter]
+	public int index { get; set; }
 	[Parameter]
 	public List<List<Job>> jobs{ get; set; } = new();//detail
 	[Parameter]

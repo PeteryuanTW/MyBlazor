@@ -1,0 +1,52 @@
+﻿@using MyBlazor.Shared.DataClass
+@inject StateContainer stateContainer
+<table class="table table-striped" style="width:auto; text-align:center; vertical-align:middle">
+    <thead>
+        <tr style="font-weight: bold">
+            <td style="vertical-align:middle">work order</td>
+            @foreach(MachineTypeList eachMachineTypeList in machineTypeList)
+            {
+                <td>
+                    <div class="dropdown">
+                        <button class="button is-success is-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            @eachMachineTypeList.machineType
+                        </button>
+                        <div class="dropdown-menu" style="background-color: lightgray">
+                            @foreach(string index in eachMachineTypeList.machineIndexList)
+                            {
+                                <div class="menu-item" style="white-space:nowrap">@index</div>
+                            }
+                        </div>
+                    </div>
+                </td>
+            }
+            <td>duetime</td>
+        </tr>
+    </thead>
+    @foreach(WOJobs eachWOJobs in allWOJobs)
+    {
+        <tr style="text-align:center">
+            <td>@eachWOJobs.wo</td>
+            @foreach(TimeSpan ts in eachWOJobs.processCost)
+            {
+                <td>@ts.ToString()</td>
+            }
+            <td>@eachWOJobs.dueTime.ToString("yyyy/MM/dd HH:mm")</td>
+        </tr>
+    }
+</table>
+
+
+@code {
+    private List<MachineTypeList> machineTypeList = new();
+    private List<WOJobs> allWOJobs = new();
+
+
+    protected override Task OnInitializedAsync()
+    {
+        machineTypeList = stateContainer.GetMachineTable();
+        allWOJobs = stateContainer.GetWOJobs();
+        return base.OnInitializedAsync();
+	}
+
+}

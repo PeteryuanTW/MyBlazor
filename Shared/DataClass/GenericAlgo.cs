@@ -8,6 +8,24 @@ namespace MyBlazor.Shared.DataClass
 {
     public static class GenericAlgo
     {
+		public static Dictionary<(string, string), DateTime> InitMachineNextAvailable(List<MachineData> machineDatas)
+		{
+			Dictionary<(string, string), DateTime> res = new();
+			foreach (MachineData machineData in machineDatas)
+			{
+				res.Add((machineData.machineName, machineData.index), machineData.nextAvailableTime);
+			}
+			return res;
+		}
+		public static Dictionary<string, DateTime> InitWONextAvailable(List<WOJobs> WOJobs)
+		{
+			Dictionary<string, DateTime>  res = new();
+			foreach (WOJobs wojobs in WOJobs)
+			{
+				res.Add(wojobs.wo, DateTime.MinValue);
+			}
+			return res;
+		}
 
 		public static List<int> InitTypeJobCounts(List<WOJobs> allWOJobs)
 		{
@@ -82,14 +100,14 @@ namespace MyBlazor.Shared.DataClass
 					if (allWOJobs[i].processCost[j] != TimeSpan.Zero)
 					{
 						int totalIndex;
-						int index;
+						int iii;
 						do
 						{
 							totalIndex = jobTypeMachineList[j].Count;
 							Random r = new Random();
-							index = r.Next(0, totalIndex);
-						} while (!jobTypeMachineList[j][index].idle || !CheckLaterThanFixJobs(index, machineCounts.ElementAt(i).Value, jobTypeMachineList[i]));
-						jobTypeMachineList[j][index] = new Job(allWOJobs[i].wo, 1, allWOJobs[i].processCost[j]);
+							iii = r.Next(0, totalIndex);
+						} while (!jobTypeMachineList[j][iii].idle || !CheckLaterThanFixJobs(iii, machineCounts.ElementAt(j).Value, jobTypeMachineList[i]));
+						jobTypeMachineList[j][iii] = new Job(allWOJobs[i].wo, 1, allWOJobs[i].processCost[j]);
 					}
 				}
 
@@ -155,6 +173,69 @@ namespace MyBlazor.Shared.DataClass
 				if (actual > expect)
 				{
 					res += (actual - expect);
+				}
+			}
+			return res;
+		}
+
+		public static List<SchedulingHistory> ReorderPopluationIndex(List<SchedulingHistory> population)
+		{
+			List<SchedulingHistory> orderPopulation = population.OrderBy(x => x.dueTime).ToList();
+			for (int i = 0; i < orderPopulation.Count; i++)
+			{
+				orderPopulation[i].index = i + 1;
+			}
+			return orderPopulation;
+		}
+
+		public static List<List<Job>> GetChildChromosomeByRoulette(List<SchedulingHistory> schedulingHistories, List<double> priorityList)
+		{
+			List<List<Job>> res = new();
+			Random r = new();
+			double randomDouble = r.NextDouble();
+			if (randomDouble <= priorityList[0])
+			{
+				res = schedulingHistories[0].jobs;
+				return res;
+			}
+			for (int i = 0; i < priorityList.Count-1; i++)
+			{
+				if (randomDouble > priorityList[i] && randomDouble < priorityList[i + 1])
+				{
+					res = schedulingHistories[i + 1].jobs;
+					return res;
+				}
+			}
+
+			res = schedulingHistories[priorityList.Count-1].jobs;
+			return res;
+		}
+
+		public static List<List<List<Job>>> Crossover(List<List<Job>> child1, List<List<Job>> child2)
+		{
+			List<List<List<Job>>> res = new();
+			List<Job> tmp = new();
+			Random r = new();
+			int index = r.Next(0, child1.Count);
+			
+			tmp = child1[index].ToList();
+			child1[index] = child2[index].ToList();
+			child2[index] = tmp.ToList();
+
+			res.Add(child1);
+			res.Add(child2);
+
+			foreach (List<List<Job>> a in res)
+			{
+				foreach (List<Job> b in a)
+				{
+					foreach (Job c in b)
+					{
+						if (!c.idle)
+						{
+							c.start = DateTime.MinValue;
+						}
+					}
 				}
 			}
 			return res;

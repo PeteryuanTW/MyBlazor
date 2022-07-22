@@ -2,16 +2,16 @@
 {
     public class SchedulingHistory
     {
-        public DateTime dataTimeID;
+        public int index;
         public List<List<Job>> jobs;
         public TimeSpan dueTime;
         public Dictionary<(string, string), DateTime> machineNextAvailable;
         public Dictionary<string, DateTime> woNextAvailable;
         public int jobsCount = 0;
 
-        public SchedulingHistory(DateTime dataTimeID, List<List<Job>> jobs, TimeSpan dueTime, Dictionary<(string, string), DateTime> machineNextAvailable, Dictionary<string, DateTime> woNextAvailable)
+        public SchedulingHistory(int index, List<List<Job>> jobs, TimeSpan dueTime, Dictionary<(string, string), DateTime> machineNextAvailable, Dictionary<string, DateTime> woNextAvailable)
         {
-            this.dataTimeID = dataTimeID;
+            this.index = index;
             this.jobs = jobs;
             this.dueTime = dueTime;
             this.machineNextAvailable = machineNextAvailable;

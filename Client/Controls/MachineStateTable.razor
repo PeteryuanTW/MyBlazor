@@ -1,11 +1,12 @@
 ﻿@using MyBlazor.Shared.DataClass
 @inject StateContainer stateContainer
-<table class="table table-striped" style="width:auto">
+<table class="table table-striped" style="width:auto; text-align:center">
     <thead>
-        <tr>
+        <tr  style="font-weight: bold">
             <td>name</td>
             <td>index</td>
             <td>state</td>
+            <td>next available time</td>
         </tr>
     </thead>
 	@foreach(MachineData machineData in machineDatas)
@@ -14,25 +15,31 @@
 			<td>@machineData.machineName</td>
             <td>@machineData.index</td>
             <td>
-                <span class="@statusToIcon(machineData.machineStatus)"></span>
+                <span class="@statusToIcon(machineData.nextAvailableTime)"></span>
             </td>
+            <td>@machineData.nextAvailableTime.ToString("yyyy/MM/dd hh:mm")</td>
 		</tr>
 	}
 </table>
 
 @code {
-    [Parameter]
-    public List<MachineData> machineDatas { get; set; } = new List<MachineData>();
+    private List<MachineData> machineDatas { get; set; } = new List<MachineData>();
 
-    private string statusToIcon(int statusBit)// green:available red:unavailable white:null
+    protected override Task OnInitializedAsync()
+    {
+        machineDatas = stateContainer.GetMachineData();
+        return base.OnInitializedAsync();
+    }
+
+    private string statusToIcon(DateTime nextAvailable)// green:available red:unavailable white:null
     {
         string res = "";
-        switch (statusBit)
+        switch (nextAvailable<=DateTime.Now)
         {
-            case 1:
+            case true:
                 res = "oi oi-media-play";
                 break;
-            case 2:
+            case false:
                 res = "oi oi-media-stop";
                 break;
             default:

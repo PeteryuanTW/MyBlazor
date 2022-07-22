@@ -124,7 +124,7 @@
         }
         ECNewWO.InvokeAsync((insertTime, new WOJobs(woName, costList, DateTime.Now.AddHours(3))));
         CloseDialogue();
-        toastService.ShowSuccess("insert success");
+        toastService.ShowWarning("rescheduling in background...");
     }
 
     private void CloseDialogue()

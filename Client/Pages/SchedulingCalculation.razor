@@ -10,17 +10,17 @@
             <button class="button @GABtnCss" @onclick="StartGA">Start Genetic Algo.</button>
         </div>
         <div class="col">
-			<span style="position:absolute; left:50%; font-size:12px">@round/@stateContainer.GetIterations()</span>
-            <progress class="progress is-warning" value=@round max="@stateContainer.GetIterations()"></progress>
+			<span style="position:absolute; left:50%; font-size:12px">@round/@stateContainer.GetGAConfig().iteration</span>
+            <progress class="progress is-warning" value=@round max="@stateContainer.GetGAConfig().iteration"></progress>
         </div>
   </div>
 </div>
 <br>
-<table class = "table table-striped table-sm" style="width:auto">
+<table class = "table table-striped table-sm" style="width:auto; text-align:center">
 	<thead class="thead-light">
 			<tr>
 				<th>Visualize</th>
-				<th>Log Time ID</th>
+				<th>ID Index</th>
 				<th>Duetime</th>
 				<th>Job(s) Count</th>
 			</tr>
@@ -31,7 +31,7 @@
 			<td>
 				<button class="button is-primary is-rounded is-light" style="border:none" @onclick="(()=>
 					{
-						SchedulingHistory target = stateContainer.GetSchedulingHistoryByDateTimeString(schedulingHistory.dataTimeID);
+						SchedulingHistory target = stateContainer.GetSchedulingHistoryByDateTimeString(schedulingHistory.index);
 						stateContainer.SetCurrentScheduling(target);
 						GoToChart();
 					})">
@@ -39,7 +39,7 @@
 				</button>
 			</td>
 			<td>
-				@schedulingHistory.dataTimeID
+				@schedulingHistory.index
 			</td>
 			<td>
 				@if (schedulingHistory.dueTime >= TimeSpan.Zero)
@@ -62,6 +62,7 @@
 	private int round;
 	private string GABtnCss = "";
 
+	/*
 	//static data without rescheduling
 	private List<WOJobs> allWOJobs = new();
 	private Dictionary<string, int> machineTypesAndCount = new();
@@ -78,7 +79,7 @@
 	private TimeSpan bestTime = TimeSpan.MaxValue;
 	private Dictionary<(string, string), DateTime> bestMachineNextAvailable = new();
 	private Dictionary<string, DateTime> bestWONextAvailable = new();
-
+	*/
 	protected override void OnInitialized()
 	{
 		base.OnInitialized();
@@ -117,45 +118,140 @@
 	}
 
 	//algo
+	/*
+	private async Task StartGA()
+	{
+	stateContainer.UIStartGA();
+	if (!CheckWOJobsAndMachine())
+	{//make sure type cost list length in wo is same as type machine count
+	return;
+	}
+	typeJobsCount = GenericAlgo.InitTypeJobCounts(allWOJobs);
+	jobTypeMachineList = GenericAlgo.InitMachineBufferByJobs(allWOJobs,typeJobsCount,machineTypesAndCount);
+	InitWONextAvailable();
+	machineTypeLists = stateContainer.GetMachineTable();
+
+	for (int i = 0; i < stateContainer.GetGAConfig().iteration; i++)
+		{
+		InitMachineNextAvailable();
+		InitWONextAvailable();
+		List<List<Job>> copyMachineBuffer = GenericAlgo.CopyMachineBuffer(jobTypeMachineList);
+		GenericAlgo.AssignJobsToMachineBuffer(allWOJobs, ref copyMachineBuffer);
+		GenericAlgo.FillJobsTimes(ref copyMachineBuffer, machineTypeLists, typeJobsCount, ref machineNextAvailable, ref  woNextAvailable);
+		TimeSpan newTime = GenericAlgo.CalculateDueTime(allWOJobs, woNextAvailable);
+		if (newTime < bestTime)
+			{
+			bestTime = newTime;
+			bestJobs = copyMachineBuffer;
+			bestMachineNextAvailable = machineNextAvailable;
+			bestWONextAvailable = woNextAvailable;
+		}
+		stateContainer.SetCurrentRound(i+1);
+		await Task.Delay(1);
+	}
+	SchedulingHistory newScheduling = new SchedulingHistory(DateTime.Now, bestJobs, bestTime, bestMachineNextAvailable, bestWONextAvailable);
+	stateContainer.SetCurrentScheduling(newScheduling);
+	stateContainer.AddSchedulingData(newScheduling);
+
+	stateContainer.UIFinishGA();
+	StateHasChanged();
+	toastService.ShowSuccess("scheduling finished");
+	}
+*/
+
 	private async Task StartGA()
 	{
 		stateContainer.UIStartGA();
-		if (!CheckWOJobsAndMachine())
-		{//make sure type cost list length in wo is same as type machine count
-			return;
-		}
-		typeJobsCount = GenericAlgo.InitTypeJobCounts(allWOJobs);
-		jobTypeMachineList = GenericAlgo.InitMachineBufferByJobs(allWOJobs,typeJobsCount,machineTypesAndCount);
-		InitWONextAvailable();
-		machineTypeLists = stateContainer.GetMachineTable();
+		//static value
+		List<WOJobs> allWOJobs = stateContainer.GetWOJobs().ToList<WOJobs>();
+		List<int> typeJobsCount = GenericAlgo.InitTypeJobCounts(allWOJobs);
+		List<MachineTypeList> machineTypeLists = stateContainer.GetMachineTable();
+		Dictionary<string, int> machineTypesAndCount = stateContainer.GetMachineTypeCount();
+		List<List<Job>> jobTypeMachineList = GenericAlgo.InitMachineBufferByJobs(allWOJobs,typeJobsCount,machineTypesAndCount);//empty buffer
 
-		for (int i = 0; i < stateContainer.GetIterations(); i++)
+		/* **************Init first generation population************** */
+		List<SchedulingHistory> parentPopulation = new();
+
+		for (int i = 0; i < stateContainer.GetGAConfig().population; i++)
 		{
-			InitMachineNextAvailable();
-			InitWONextAvailable();
-			List<List<Job>> copyMachineBuffer = GenericAlgo.CopyMachineBuffer(jobTypeMachineList);
-			GenericAlgo.AssignJobsToMachineBuffer(allWOJobs, ref copyMachineBuffer);
-			GenericAlgo.FillJobsTimes(ref copyMachineBuffer, machineTypeLists, typeJobsCount, ref machineNextAvailable, ref  woNextAvailable);
-			TimeSpan newTime = GenericAlgo.CalculateDueTime(allWOJobs, woNextAvailable);
-			if (newTime < bestTime)
-			{
-				bestTime = newTime;
-				bestJobs = copyMachineBuffer;
-				bestMachineNextAvailable = machineNextAvailable;
-				bestWONextAvailable = woNextAvailable;
-			}
-			stateContainer.SetCurrentRound(i+1);
-			await Task.Delay(1);
-		}
-		SchedulingHistory newScheduling = new SchedulingHistory(DateTime.Now, bestJobs, bestTime, bestMachineNextAvailable, bestWONextAvailable);
-		stateContainer.SetCurrentScheduling(newScheduling);
-		stateContainer.AddSchedulingData(newScheduling);
+			//dynamic programing Init each iteration
+			Dictionary<(string, string), DateTime> dpMachineTable = GenericAlgo.InitMachineNextAvailable(stateContainer.GetMachineData());
+			Dictionary<string, DateTime> dpWOTable = GenericAlgo.InitWONextAvailable(stateContainer.GetWOJobs());
+			//empty job buffer
+			List<List<Job>> machineBuffer = GenericAlgo.CopyMachineBuffer(jobTypeMachineList);
+			GenericAlgo.AssignJobsToMachineBuffer(allWOJobs, ref machineBuffer);
+			GenericAlgo.FillJobsTimes(ref machineBuffer, machineTypeLists, typeJobsCount, ref dpMachineTable, ref  dpWOTable);
+			TimeSpan newTime = GenericAlgo.CalculateDueTime(allWOJobs, dpWOTable);
 
+			parentPopulation.Add(new SchedulingHistory(i+1, machineBuffer, newTime, dpMachineTable, dpWOTable));
+
+			await Task.Delay(10);
+		}
+		parentPopulation = GenericAlgo.ReorderPopluationIndex(parentPopulation);
+		/* **************generate child by crossover, selection or mutation and population each iteration************** */
+
+		foreach (var a in parentPopulation)
+			{
+				Console.WriteLine(a.dueTime);
+			}
+
+		for (int i = 0; i < stateContainer.GetGAConfig().iteration; i++)
+		{
+			//selection top 5 from parent
+			List<SchedulingHistory> childPopulation = new();
+			childPopulation = parentPopulation.GetRange(0, stateContainer.GetGAConfig().parentRemainCount);
+
+			//selection by Roulette wheel method
+			List<double> priorityList = new();
+			priorityList = parentPopulation.Select(x => x.dueTime.TotalSeconds).ToList();
+			double max = priorityList.Sum();
+			priorityList = priorityList.Select(x => x / max).ToList();
+			priorityList.Reverse();
+			double tmp = 0.0;
+			for (int j = 0; j< priorityList.Count; j++)
+			{
+				tmp += priorityList[j];
+				priorityList[j] = tmp;
+			}
+			while (childPopulation.Count < stateContainer.GetGAConfig().population)
+			{
+				List<List<Job>> child1 = GenericAlgo.GetChildChromosomeByRoulette(parentPopulation, priorityList);
+				List<List<Job>> child2 = GenericAlgo.GetChildChromosomeByRoulette(parentPopulation, priorityList);
+
+				List<List<List<Job>>> offspringList = GenericAlgo.Crossover(child1, child2);
+				for (int k = 0;  k<offspringList.Count; k++)
+				{
+					if (childPopulation.Count < stateContainer.GetGAConfig().population)
+					{
+						//dynamic programing Init each iteration
+						Dictionary<(string, string), DateTime> dpMachineTable = GenericAlgo.InitMachineNextAvailable(stateContainer.GetMachineData());
+						Dictionary<string, DateTime> dpWOTable = GenericAlgo.InitWONextAvailable(stateContainer.GetWOJobs());
+						//empty job buffer
+						var t = offspringList[k];
+						GenericAlgo.FillJobsTimes(ref t, machineTypeLists, typeJobsCount, ref dpMachineTable, ref  dpWOTable);
+						TimeSpan newTime = GenericAlgo.CalculateDueTime(allWOJobs, dpWOTable);
+						if (newTime == TimeSpan.Zero)
+						{
+							
+						}
+						childPopulation.Add(new SchedulingHistory(childPopulation.Count ,t, newTime, dpMachineTable, dpWOTable));
+					}
+				}
+			}
+			parentPopulation = GenericAlgo.ReorderPopluationIndex(childPopulation);
+			Console.WriteLine("generation: "+i);
+			foreach (var a in parentPopulation)
+			{
+				Console.WriteLine(a.dueTime);
+			}
+			await Task.Delay(10);
+		}
+		stateContainer.AddSchedulingData(parentPopulation[0]);
 		stateContainer.UIFinishGA();
 		StateHasChanged();
 		toastService.ShowSuccess("scheduling finished");
 	}
-
+	/*
 	private void InitMachineNextAvailable()
 	{
 		machineNextAvailable = new();
@@ -186,27 +282,5 @@
 			}
 		}
 		return true;
-	}
-	/*
-	private List<List<Job>> InitMachineBufferByJobs()
-	{
-		List<List<Job>> res = new();
-		typeJobsCount = new();
-		for (int i = 0; i < allWOJobs[0].processCost.Count; i++)
-		{
-			int typeJobs = 0;//amount of each type of jobs
-			for (int j = 0; j < allWOJobs.Count; j++)
-			{
-				if (allWOJobs[j].processCost[i] != TimeSpan.Zero)
-				{
-					typeJobs++;
-				}
-			}
-			typeJobsCount.Add(typeJobs);
-			int typeAmount = machineTypesAndCount.ElementAt(i).Value;
-			List<Job> tmp =  Enumerable.Repeat(new Job(), typeJobs * typeAmount).ToList();
-			res.Add(tmp);
-		}
-		return res;
 	}*/
 }

@@ -3,13 +3,15 @@
 @using System.Collections.Generic;
 @using MyBlazor.Shared.DataClass
 @inject StateContainer stateContainer
-<MyGanttChart allMachineStatus="@machineData" dateTimeID ="@dateTimeID"  jobs = "@jobs" bestDueTime="@bestDueTime"></MyGanttChart>
+@inject IToastService toastService
+<MyGanttChart allMachineStatus="@machineData" index ="@index"  jobs = "@jobs" bestDueTime="@currentBestDueTime"></MyGanttChart>
+<!--
 <div style="margin-top:20px; margin-left:20px">
 	<button class="button is-info is-rounded is-light" style="border:none" @onclick="(()=>{showAddWODiakogue = true;})">
 	    <i class="oi oi-plus"></i>
     </button>
 </div>
-
+-->
 
 @if (showAddWODiakogue)
 {
@@ -22,18 +24,27 @@
 	private Dictionary<string, int>? machineTypeCount;
 	//best history
 	private SchedulingHistory? currentSchedulingHistory;
-	private DateTime dateTimeID;
+	//private DateTime dateTimeID;
+	private int index;
 	private List<List<Job>> jobs = new();
 	private Dictionary<(string, string), DateTime> machineNextAvailable;
 	private Dictionary<string, DateTime> woNextAvailable;
-	private TimeSpan bestDueTime = TimeSpan.Zero;
-	//tmp clone when add wo
+	private TimeSpan currentBestDueTime;
+	//tmp clone template when add wo
 	private List<List<Job>> copyJobs = new();
 	private Dictionary<(string, string), DateTime> copyMachineNextAvailable;
 	private Dictionary<string, DateTime> copyWONextAvailable;
 	//reschedule
-	private List<WOJobs> jobReSchedule = new();//only contain the wo job list for rescheduling
-
+	private List<WOJobs> jobReSchedule = new();//only contains the wo job list for rescheduling
+	//tmp for reschedule calculation
+	private List<List<Job>> tmpJobs = new();
+	private Dictionary<(string, string), DateTime> tmpMachineNextAvailable;
+	private Dictionary<string, DateTime> tmpWONextAvailable;
+	//add wo best record
+	private List<List<Job>> newBestJobs = new();
+	private Dictionary<(string, string), DateTime> newBestMachineNextAvailable;
+	private Dictionary<string, DateTime> newBestWONextAvailable;
+	private TimeSpan addWOBestDueTime;
 
 	protected override Task OnInitializedAsync()
 	{
@@ -41,9 +52,9 @@
 		currentSchedulingHistory = stateContainer.GetCurrentScheduling();
 		if (currentSchedulingHistory != null)
 		{
-			dateTimeID = currentSchedulingHistory.dataTimeID;
+			index = currentSchedulingHistory.index;
 			jobs = currentSchedulingHistory.jobs;
-			bestDueTime = currentSchedulingHistory.dueTime;
+			currentBestDueTime = currentSchedulingHistory.dueTime;
 			machineNextAvailable = currentSchedulingHistory.machineNextAvailable;
 			woNextAvailable = currentSchedulingHistory.woNextAvailable;
 		}
@@ -65,16 +76,17 @@
 	private void GetNewScheduling(SchedulingHistory newScheduling)
 	{
 		currentSchedulingHistory = newScheduling;
-		dateTimeID = newScheduling.dataTimeID;
+		index = newScheduling.index;
 		jobs = newScheduling.jobs;
-		bestDueTime = newScheduling.dueTime;
+		currentBestDueTime = newScheduling.dueTime;
 		machineNextAvailable = newScheduling.machineNextAvailable;
 		woNextAvailable = newScheduling.woNextAvailable;
 		StateHasChanged();
 	}
 
-	private void NewWOInsertHandler((DateTime, WOJobs) timeAndWO)
+	private async Task NewWOInsertHandler((DateTime, WOJobs) timeAndWO)
 	{
+		/*
 		stateContainer.AddWORequirements(timeAndWO.Item2);
 		InitCopy();
 		jobReSchedule = new();
@@ -96,7 +108,7 @@
 		}
 
 		int typeCount = copyJobs.Count;
-		//rebuild the job need to be rescheduled
+		//rebuild the jobs need to be rescheduled
 		for (int i = 0; i<copyJobs.Count; i++)
 		{
 			for (int j = 0; j<copyJobs[i].Count; j++)
@@ -123,6 +135,7 @@
 						}
 					}
 
+					//remove jobs from jobs list then rebuild and put into neshchedule buffer
 					DateTime due = stateContainer.GetWOJobs().Find(x => x.wo == copyJobs[i][j].wo).dueTime;
 
 					if (!jobReSchedule.Exists(x => x.wo == copyJobs[i][j].wo))
@@ -131,26 +144,66 @@
 					}
 					jobReSchedule.Find(x => x.wo == copyJobs[i][j].wo).processCost[index] = copyJobs[i][j].duration;
 					copyJobs[i][j] = new Job();
-
-
 				}
 			}
 		}
-		//copy job list and dicts from here because the init is finshed
-		for (int i = 0; i < stateContainer.GetIterations(); i++)
+
+		for (int i = 0;  i<copyMachineNextAvailable.Count; i++)
 		{
-			
+			if (copyMachineNextAvailable.ElementAt(i).Value < timeAndWO.Item1)
+			{
+				var key = copyMachineNextAvailable.ElementAt(i).Key;
+				copyMachineNextAvailable.Remove(key);
+				copyMachineNextAvailable.Add(key, timeAndWO.Item1);
+			}
+
 		}
-		GenericAlgo.ReassignJobsToMachineBuffer(jobReSchedule, ref copyJobs, machineTypeCount);
-		GenericAlgo.FillJobsTimes(ref copyJobs, stateContainer.GetMachineTable(), GetTypeJobsCount(copyJobs, machineTypeCount), ref copyMachineNextAvailable, ref copyWONextAvailable);
-		SchedulingHistory newScheduling = new SchedulingHistory(DateTime.Now, copyJobs, TimeSpan.Zero, copyMachineNextAvailable, copyWONextAvailable);
+		for (int i = 0;  i<copyWONextAvailable.Count; i++)
+		{
+			if (copyWONextAvailable.ElementAt(i).Value < timeAndWO.Item1)
+			{
+				var key = copyWONextAvailable.ElementAt(i).Key;
+				copyWONextAvailable.Remove(key);
+				copyWONextAvailable.Add(key, timeAndWO.Item1);
+			}
+
+		}
+		//copy job list and dicts from here because the init is finshed
+		for (int i = 0; i < stateContainer.GetGAConfig().iteration; i++)
+		{
+			try
+			{
+				tmpJobs = GenericAlgo.CopyMachineBuffer(copyJobs);
+				tmpMachineNextAvailable = new Dictionary<(string, string), DateTime>(copyMachineNextAvailable);
+				tmpWONextAvailable = new Dictionary<string, DateTime>(copyWONextAvailable);
+				GenericAlgo.ReassignJobsToMachineBuffer(jobReSchedule, ref tmpJobs, machineTypeCount);
+				GenericAlgo.FillJobsTimes(ref tmpJobs, stateContainer.GetMachineTable(), GetTypeJobsCount(tmpJobs, machineTypeCount), ref tmpMachineNextAvailable, ref tmpWONextAvailable);
+				TimeSpan newTime = GenericAlgo.CalculateDueTime(stateContainer.GetWOJobs(), tmpWONextAvailable);
+				if (newTime < addWOBestDueTime)
+				{
+					addWOBestDueTime = newTime;
+					newBestJobs = tmpJobs;
+					newBestMachineNextAvailable = tmpMachineNextAvailable;
+					newBestWONextAvailable = tmpWONextAvailable;
+				}
+				Console.WriteLine(".");
+				await Task.Delay(1);
+			}
+			catch (Exception e)
+			{
+				Console.WriteLine(e.ToString());
+			}
+		}
+		SchedulingHistory newScheduling = new SchedulingHistory(i, newBestJobs, addWOBestDueTime, newBestMachineNextAvailable, newBestWONextAvailable);
 		stateContainer.SetCurrentScheduling(newScheduling);
 		stateContainer.AddSchedulingData(newScheduling);
-		GenericAlgo.CalculateDueTime(stateContainer.GetWOJobs(), copyWONextAvailable);
+		toastService.ShowSuccess("rescheduling finished");
+		StateHasChanged();*/
 	}
 
 	private void InitCopy()//copy job lists and dynamic programing dicts
 	{
+		addWOBestDueTime = TimeSpan.MaxValue;
 		copyJobs = GenericAlgo.CopyMachineBuffer(jobs);
 		copyMachineNextAvailable = new Dictionary<(string, string), DateTime>(machineNextAvailable);
 		copyWONextAvailable = new Dictionary<string, DateTime>(woNextAvailable);

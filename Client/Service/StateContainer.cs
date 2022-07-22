@@ -47,22 +47,33 @@ public class StateContainer
         return GAbtnstatusCss;
     }
     //algo configs
-    private int iteratives = 1000;
-    public int GetIterations()
+    private GAConfig config = new();
+    public GAConfig GetGAConfig()
     {
-        return iteratives;
+        return config;
     }
+    public void SetGAConfig(GAConfig newConfig)
+    {
+        if (newConfig.population > 0 && newConfig.iteration > 0 && newConfig.mutationRate >= 0.0 && newConfig.mutationRate <= 1.0)
+        {
+            config = newConfig;
+        }
+        GAConfigChange(config);
+    }
+    public event Action<GAConfig>? OnGAConfigChange;
+    public void GAConfigChange(GAConfig newGAConfig) => OnGAConfigChange?.Invoke(newGAConfig);
+
     //GA history data
     private List<SchedulingHistory> schedulingHistories = new List<SchedulingHistory>();
     public void AddSchedulingData(SchedulingHistory schedulingHistory)
     {
-        if (schedulingHistories.Count < 10)
+        if (schedulingHistories.Count < 25)
         {
             schedulingHistories.Add(schedulingHistory);
         }
         else
         {
-            int tmpIndex = schedulingHistories.IndexOf(schedulingHistories.MinBy(x => x.dataTimeID));
+            int tmpIndex = schedulingHistories.IndexOf(schedulingHistories.MaxBy(x => x.dueTime));
             if (tmpIndex != -1)
             {
                 schedulingHistories[tmpIndex] = schedulingHistory;
@@ -74,9 +85,9 @@ public class StateContainer
     {
         return schedulingHistories;
     }
-    public SchedulingHistory GetSchedulingHistoryByDateTimeString(DateTime dateTime)
+    public SchedulingHistory GetSchedulingHistoryByDateTimeString(int index)
     {
-        SchedulingHistory target = schedulingHistories.FirstOrDefault(x => x.dataTimeID.ToString("yyyy MM dd HH mm ss") == dateTime.ToString("yyyy MM dd HH mm ss"));
+        SchedulingHistory target = schedulingHistories.FirstOrDefault(x => x.index == index);
         return target;
     }
     public event Action<List<SchedulingHistory>>? OnGAHistoryDataChamge;
