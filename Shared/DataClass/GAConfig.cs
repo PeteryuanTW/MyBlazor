@@ -14,7 +14,7 @@ namespace MyBlazor.Shared.DataClass
         public float mutationRate;
         public GAConfig()
         {
-            population = 25;
+            population = 50;
             iteration = 30;
             parentRemainCount = 5;
             mutationRate = 0.75f;//0.5%~1% was suggested

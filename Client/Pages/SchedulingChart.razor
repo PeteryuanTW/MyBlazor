@@ -4,7 +4,7 @@
 @using MyBlazor.Shared.DataClass
 @inject StateContainer stateContainer
 @inject IToastService toastService
-<MyGanttChart allMachineStatus="@machineData" index ="@index"  jobs = "@jobs" bestDueTime="@currentBestDueTime"></MyGanttChart>
+<MyGanttChart allMachineStatus="@machineData" rank ="@rank"  jobs = "@jobs" bestDueTime="@currentBestDueTime"></MyGanttChart>
 <!--
 <div style="margin-top:20px; margin-left:20px">
 	<button class="button is-info is-rounded is-light" style="border:none" @onclick="(()=>{showAddWODiakogue = true;})">
@@ -25,7 +25,7 @@
 	//best history
 	private SchedulingHistory? currentSchedulingHistory;
 	//private DateTime dateTimeID;
-	private int index;
+	private int rank;
 	private List<List<Job>> jobs = new();
 	private Dictionary<(string, string), DateTime> machineNextAvailable;
 	private Dictionary<string, DateTime> woNextAvailable;
@@ -52,7 +52,7 @@
 		currentSchedulingHistory = stateContainer.GetCurrentScheduling();
 		if (currentSchedulingHistory != null)
 		{
-			index = currentSchedulingHistory.index;
+			rank = currentSchedulingHistory.rank;
 			jobs = currentSchedulingHistory.jobs;
 			currentBestDueTime = currentSchedulingHistory.dueTime;
 			machineNextAvailable = currentSchedulingHistory.machineNextAvailable;
@@ -76,7 +76,7 @@
 	private void GetNewScheduling(SchedulingHistory newScheduling)
 	{
 		currentSchedulingHistory = newScheduling;
-		index = newScheduling.index;
+		rank = newScheduling.rank;
 		jobs = newScheduling.jobs;
 		currentBestDueTime = newScheduling.dueTime;
 		machineNextAvailable = newScheduling.machineNextAvailable;
@@ -210,7 +210,7 @@
 	}
 
 	private List<int> GetTypeJobsCount(List<List<Job>> jobs, Dictionary<string, int> machineTypeCount)
-	{
+	{ 
 		List<int> res = new();
 		for (int i = 0; i < jobs.Count; i++)
 		{

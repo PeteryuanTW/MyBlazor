@@ -2,19 +2,31 @@
 public class StateContainer
 {
     //GA UI
-    private int currentRound = 0;
-    public int GetCurrentRound()
+    private int currentParentRound = 0;
+    private int currentChildRound = 0;
+    public int GetCurrentRoundParent()
     {
-        return currentRound;
+        return currentParentRound;
+    }
+    public int GetCurrentRoundChild()
+    {
+        return currentChildRound;
     }
 
-    public void SetCurrentRound(int i)
+    public void SetCurrentRoundParent(int r)
     {
-        currentRound = i;
-        CurrentRoundChange(i);
+        currentParentRound = r;
+        CurrentRoundChangeParent(r);
     }
-    public event Action<int>? OnCurrentRoundChange;
-    public void CurrentRoundChange(int currentRoung) => OnCurrentRoundChange?.Invoke(currentRoung);
+    public void SetCurrentRoundChild(int r)
+    {
+        currentChildRound = r;
+        CurrentRoundChangeChild(r);
+    }
+    public event Action<int>? OnCurrentRoundChangeParent;
+    public event Action<int>? OnCurrentRoundChangeChild;
+    public void CurrentRoundChangeParent(int currentRound) => OnCurrentRoundChangeParent?.Invoke(currentRound);
+    public void CurrentRoundChangeChild(int currentRound) => OnCurrentRoundChangeChild?.Invoke(currentRound);
 
     private string gaBtnCss = "is-primary";
     public string GetGABtnCSS()
@@ -79,15 +91,33 @@ public class StateContainer
                 schedulingHistories[tmpIndex] = schedulingHistory;
             }
         }
+        ReorderSchedulingData();
         GAHistoryDataChamge(schedulingHistories);
     }
+    public void DeleteSchedulingData(int rankIndex)
+    {
+        schedulingHistories.RemoveAt(rankIndex);
+        ReorderSchedulingData();
+        GAHistoryDataChamge(schedulingHistories);
+    }
+
+    private void ReorderSchedulingData()
+    {
+        schedulingHistories = schedulingHistories.OrderBy(x => x.dueTime).ToList();
+        for (int i = 0; i < schedulingHistories.Count; i++)
+        {
+            schedulingHistories[i].rank = i;
+        }
+        GAHistoryDataChamge(schedulingHistories);
+    }
+
     public List<SchedulingHistory> GetSchedulingData()
     {
         return schedulingHistories;
     }
-    public SchedulingHistory GetSchedulingHistoryByDateTimeString(int index)
+    public SchedulingHistory GetSchedulingHistoryByRank(int rank)
     {
-        SchedulingHistory target = schedulingHistories.FirstOrDefault(x => x.index == index);
+        SchedulingHistory target = schedulingHistories.FirstOrDefault(x => x.rank == rank);
         return target;
     }
     public event Action<List<SchedulingHistory>>? OnGAHistoryDataChamge;

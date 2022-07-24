@@ -183,7 +183,7 @@ namespace MyBlazor.Shared.DataClass
 			List<SchedulingHistory> orderPopulation = population.OrderBy(x => x.dueTime).ToList();
 			for (int i = 0; i < orderPopulation.Count; i++)
 			{
-				orderPopulation[i].index = i + 1;
+				orderPopulation[i].rank = i + 1;
 			}
 			return orderPopulation;
 		}
@@ -195,19 +195,19 @@ namespace MyBlazor.Shared.DataClass
 			double randomDouble = r.NextDouble();
 			if (randomDouble <= priorityList[0])
 			{
-				res = schedulingHistories[0].jobs;
+				res = schedulingHistories[0].jobs.ToList();
 				return res;
 			}
 			for (int i = 0; i < priorityList.Count-1; i++)
 			{
 				if (randomDouble > priorityList[i] && randomDouble < priorityList[i + 1])
 				{
-					res = schedulingHistories[i + 1].jobs;
+					res = schedulingHistories[i + 1].jobs.ToList();
 					return res;
 				}
 			}
 
-			res = schedulingHistories[priorityList.Count-1].jobs;
+			res = schedulingHistories[priorityList.Count-1].jobs.ToList();
 			return res;
 		}
 
@@ -224,7 +224,7 @@ namespace MyBlazor.Shared.DataClass
 
 			res.Add(child1);
 			res.Add(child2);
-
+			/*
 			foreach (List<List<Job>> a in res)
 			{
 				foreach (List<Job> b in a)
@@ -238,7 +238,24 @@ namespace MyBlazor.Shared.DataClass
 					}
 				}
 			}
+			*/
 			return res;
 		}
+
+		public static void ResetStart(ref List<List<Job>> jobLists)
+		{
+			foreach (List<Job> list in jobLists)
+			{
+				foreach (Job job in list)
+				{
+					if (!job.idle)
+					{
+						job.start = DateTime.MinValue;
+					}
+				}
+			}
+		}
+
+
 	}
 }
