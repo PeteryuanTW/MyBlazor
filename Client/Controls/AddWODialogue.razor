@@ -6,48 +6,41 @@
     <div class="modal-dialog modal-xl modal-dialog-centered" style="width:100%">
         <div class="modal-content" style="width:auto">
             <div class="modal-header">
-                <h5 class="modal-title">
-                    <b>
-                        Add New Order
-                    </b>
-                </h5>
+	            <label style="font-size:larger">@(jobsInMachine.machineName+"-"+jobsInMachine.index)</label>
                 <label class="oi oi-x" style="align-self:start" @onclick="CloseDialogue"></label>
             </div>
             <div class="modal-body">
                 <table>
-                    <tr>
-                        <td>
-                            <b>
-                                <label style="font:bold; margin-right:10px">Order Name:</label>
-                            </b>
-                        </td>
-                        <td>
-                            <input type="text" style="width:100%" @bind-value="woName">
-                        </td>
+                    <tr style="font-weight:bold; text-align:center">
+                        <td>WO</td>
+                        <td>start at</td>
+                        <td>end at</td>
                     </tr>
-                    <tr>
-                        <td>
-                             <b>
-                                <label style="font:bold; margin-right:10px">Insert Time:</label>
-                            </b>
-                        </td>
-                        <td>
-                            <input type="datetime-local" style="width:100%" @bind-value="insertTime">
-                        </td>
-                    </tr>
-                </table>
-                <table class="table table-striped">
-                    @for (int i = 0; i < machineTypes.Count; i++)
+                    @foreach(WOJobInMachine WOJobs in jobsInMachine.woJobsInMachine)
                     {
                         <tr>
-                            <td>
-                                <label style="font:bold; margin-right:10px">@machineTypes[i].machineType</label>
+                            <td style="font-weight: bold">
+                                @WOJobs.wo
                             </td>
                             <td>
-                                <MyTimeSpanPicker machineType=@machineTypes[i].machineType costChange="CostTimeHandler"></MyTimeSpanPicker>
+                                @WOJobs.startAndEndTime.startTime.ToString("yyyy MM/dd hh:mm:ss")
+                            </td>
+                            <td>
+                                @WOJobs.startAndEndTime.endTime.ToString("yyyy MM/dd hh:mm:ss")
                             </td>
                         </tr>
                     }
+                    <tr>
+                        <td>
+                            <input type="text" style="@woNameCssString" placeholder="new work order no." @bind-value=newWO>
+                        </td>
+                        <td>
+                            <input type="datetime-local" style="@startTimeCssString" min=@minTime.ToString("yyyy-MM-dd'T'HH:mm:ss") @bind-value=lastAvailableTime>
+                        </td>
+                        <td>
+                            <input type="datetime-local" style="@endTimeCssString" min=@minTime.ToString("yyyy-MM-dd'T'HH:mm:ss") @bind-value=newWOendTime>
+                        </td>
+                    </tr>
                 </table>
             </div>
             <div class="modal-footer">
@@ -59,13 +52,18 @@
 
 @code{
     [Parameter]
-    public EventCallback<bool> display { get; set; }
+    public MachineWOJobs jobsInMachine { get; set; }
     [Parameter]
-    public EventCallback<(DateTime, WOJobs)> ECNewWO{get; set;}
-    private string woName = "";
-    private DateTime insertTime = DateTime.Now;
-    private List<MachineTypeList> machineTypes = new();
-    private Dictionary<string ,TimeSpan> costTimes = new();
+    public EventCallback<bool> display { get; set; }
+
+    private string newWO = "";
+    private string woNameCssString = "";
+    private DateTime minTime;
+    private DateTime lastAvailableTime;
+    private string startTimeCssString = "";
+    private DateTime newWOendTime;
+    private string endTimeCssString = "";
+
     string status = "";
 
     protected override void OnParametersSet()
@@ -75,7 +73,8 @@
 
     protected override Task OnInitializedAsync()
     {
-        InitMachineData();
+        machineStyle(jobsInMachine.machineStatus);
+        SetLastAvailableTime();
         return base.OnInitializedAsync();
     }
 
@@ -94,37 +93,45 @@
                 break;
         }
     }
-
-    private void InitMachineData()
+    private void SetLastAvailableTime()
     {
-        machineTypes = stateContainer.GetMachineTable();
-        costTimes = new();
-        for (int i = 0; i < machineTypes.Count; i++)
+        minTime = jobsInMachine.woJobsInMachine[^1].startAndEndTime.endTime;
+        lastAvailableTime = jobsInMachine.woJobsInMachine[^1].startAndEndTime.endTime;
+        newWOendTime = jobsInMachine.woJobsInMachine[^1].startAndEndTime.endTime;
+    }
+    private async void AddNewWO()
+    {
+        bool flag = true;
+        if (newWO == "")
         {
-            costTimes.Add(machineTypes[i].machineType ,TimeSpan.Zero);
+            woNameCssString = "border-color:red";
+            StateHasChanged();
+            flag = false;
         }
-    }
-
-    private void CostTimeHandler((string, TimeSpan) newCost)
-    {
-        costTimes[newCost.Item1] = newCost.Item2;
-    }
-
-    private void AddNewWO()
-    {
-        if (woName == "")
+        if (lastAvailableTime <= DateTime.Now)
         {
+            startTimeCssString = "border-color:red";
+            StateHasChanged();
+            flag = false;
+        }
+        if (newWOendTime <= lastAvailableTime)
+        {
+            startTimeCssString = "border-color:red";
+            endTimeCssString = "border-color:red";
+            StateHasChanged();
+            flag = false;
+        }
+        
+        if (!flag)
+        {
+            await Task.Delay(1500);
+            woNameCssString = "";
+            startTimeCssString = "";
+            endTimeCssString = "";
+            StateHasChanged();
             return;
         }
-        List<TimeSpan> costList = new();
-        costTimes.OrderBy(x => x.Key);
-        foreach (TimeSpan cost in costTimes.Values)
-        {
-            costList.Add(cost);
-        }
-        ECNewWO.InvokeAsync((insertTime, new WOJobs(woName, costList, DateTime.Now.AddHours(3))));
-        CloseDialogue();
-        toastService.ShowWarning("rescheduling in background...");
+
     }
 
     private void CloseDialogue()

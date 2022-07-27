@@ -1,4 +1,4 @@
-﻿<button class="button is-rounded is-light @statusCss">
+﻿<button class="button is-rounded is-light @statusCss" @onclick="Click">
 @machineName-@index</button>
 
 @code {
@@ -8,6 +8,10 @@
     public string index { get; set; } = "";
     [Parameter]
     public int machineStatus { get; set; } = 0;
+    [Parameter]
+    public EventCallback<(string, string)> ECtargerMachine { get; set; }
+    [Parameter]
+    public EventCallback<bool> ECshowDialogue { get; set; }
 
     string statusCss = "";
     protected override void OnParametersSet()
@@ -16,7 +20,13 @@
         statusToCss(machineStatus);
     }
 
-    
+
+    private void Click()
+    {
+        ECtargerMachine.InvokeAsync((machineName, index));
+        ECshowDialogue.InvokeAsync(true);
+    }
+
     private void statusToCss(int statusBit)// green:available red:unavailable white:null
     {
         switch (statusBit)

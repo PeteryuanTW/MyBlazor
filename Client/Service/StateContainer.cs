@@ -35,6 +35,8 @@ public class StateContainer
     }
     public void UIStartGA()
     {
+        SetCurrentRoundParent(0);
+        SetCurrentRoundChild(0);
         gaBtnCss = "is-danger  is-loading title=\"Disabled button\" disabled";
         GABtnCssChange(gaBtnCss);
     }

@@ -161,48 +161,6 @@
 		StateHasChanged();
 	}
 
-	//algo
-	/*
-	private async Task StartGA()
-	{
-	stateContainer.UIStartGA();
-	if (!CheckWOJobsAndMachine())
-	{//make sure type cost list length in wo is same as type machine count
-	return;
-	}
-	typeJobsCount = GenericAlgo.InitTypeJobCounts(allWOJobs);
-	jobTypeMachineList = GenericAlgo.InitMachineBufferByJobs(allWOJobs,typeJobsCount,machineTypesAndCount);
-	InitWONextAvailable();
-	machineTypeLists = stateContainer.GetMachineTable();
-
-	for (int i = 0; i < stateContainer.GetGAConfig().iteration; i++)
-		{
-		InitMachineNextAvailable();
-		InitWONextAvailable();
-		List<List<Job>> copyMachineBuffer = GenericAlgo.CopyMachineBuffer(jobTypeMachineList);
-		GenericAlgo.AssignJobsToMachineBuffer(allWOJobs, ref copyMachineBuffer);
-		GenericAlgo.FillJobsTimes(ref copyMachineBuffer, machineTypeLists, typeJobsCount, ref machineNextAvailable, ref  woNextAvailable);
-		TimeSpan newTime = GenericAlgo.CalculateDueTime(allWOJobs, woNextAvailable);
-		if (newTime < bestTime)
-			{
-			bestTime = newTime;
-			bestJobs = copyMachineBuffer;
-			bestMachineNextAvailable = machineNextAvailable;
-			bestWONextAvailable = woNextAvailable;
-		}
-		stateContainer.SetCurrentRound(i+1);
-		await Task.Delay(1);
-	}
-	SchedulingHistory newScheduling = new SchedulingHistory(DateTime.Now, bestJobs, bestTime, bestMachineNextAvailable, bestWONextAvailable);
-	stateContainer.SetCurrentScheduling(newScheduling);
-	stateContainer.AddSchedulingData(newScheduling);
-
-	stateContainer.UIFinishGA();
-	StateHasChanged();
-	toastService.ShowSuccess("scheduling finished");
-	}
-*/
-
 	private async Task StartGA()
 	{
 		stateContainer.UIStartGA();

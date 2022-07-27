@@ -5,18 +5,6 @@
 @inject StateContainer stateContainer
 @inject IToastService toastService
 <MyGanttChart allMachineStatus="@machineData" rank ="@rank"  jobs = "@jobs" bestDueTime="@currentBestDueTime"></MyGanttChart>
-<!--
-<div style="margin-top:20px; margin-left:20px">
-	<button class="button is-info is-rounded is-light" style="border:none" @onclick="(()=>{showAddWODiakogue = true;})">
-	    <i class="oi oi-plus"></i>
-    </button>
-</div>
--->
-
-@if (showAddWODiakogue)
-{
-	<AddWODialogue display="displayHandler" ECNewWO="NewWOInsertHandler"></AddWODialogue>
-}
 
 @code {
 	//static data
@@ -67,12 +55,6 @@
 		stateContainer.OnCurrentSchedulingChange -= GetNewScheduling;
 	}
 
-	bool showAddWODiakogue = false;
-	void displayHandler(bool display)
-	{
-		showAddWODiakogue=display;
-	}
-
 	private void GetNewScheduling(SchedulingHistory newScheduling)
 	{
 		currentSchedulingHistory = newScheduling;
@@ -84,146 +66,11 @@
 		StateHasChanged();
 	}
 
-	private async Task NewWOInsertHandler((DateTime, WOJobs) timeAndWO)
-	{
-		/*
-		stateContainer.AddWORequirements(timeAndWO.Item2);
-		InitCopy();
-		jobReSchedule = new();
-		jobReSchedule.Add(timeAndWO.Item2);
-
-		Dictionary<string, int> machineTypeCount = stateContainer.GetMachineTypeCount();
-
-		for(int i = 0; i < timeAndWO.Item2.processCost.Count; i++)
-		{
-			int jobCount = copyJobs[i].Count/machineTypeCount.ElementAt(i).Value;
-			if (timeAndWO.Item2.processCost[i] != TimeSpan.Zero)
-			{
-				int originalLength = copyJobs[i].Count;
-				for (int j = originalLength; j > 0; j -= jobCount)
-				{
-					copyJobs[i].Insert(j, new Job());
-				}
-			}
-		}
-
-		int typeCount = copyJobs.Count;
-		//rebuild the jobs need to be rescheduled
-		for (int i = 0; i<copyJobs.Count; i++)
-		{
-			for (int j = 0; j<copyJobs[i].Count; j++)
-			{
-				if (!copyJobs[i][j].idle && copyJobs[i][j].start >= timeAndWO.Item1)//job needs to be rescheduled
-				{
-					//reset dynamic programing dict
-					if (copyMachineNextAvailable[(copyJobs[i][j].machine, copyJobs[i][j].index)] > copyJobs[i][j].start)
-					{
-						copyMachineNextAvailable[(copyJobs[i][j].machine, copyJobs[i][j].index)] = copyJobs[i][j].start;
-					}
-					if (copyWONextAvailable[copyJobs[i][j].wo] > copyJobs[i][j].start)
-					{
-						copyWONextAvailable[copyJobs[i][j].wo] = copyJobs[i][j].start;
-					}
-					string currentType = copyJobs[i][j].machine;
-					int index = -1;
-					for (int k = 0; k < machineTypeCount.Count; j++)
-					{
-						if (machineTypeCount.ElementAt(i).Key == currentType)
-						{
-							index = machineTypeCount.ElementAt(i).Value;
-							break;
-						}
-					}
-
-					//remove jobs from jobs list then rebuild and put into neshchedule buffer
-					DateTime due = stateContainer.GetWOJobs().Find(x => x.wo == copyJobs[i][j].wo).dueTime;
-
-					if (!jobReSchedule.Exists(x => x.wo == copyJobs[i][j].wo))
-					{
-						jobReSchedule.Add(new WOJobs(copyJobs[i][j].wo, new List<TimeSpan>(new TimeSpan[typeCount]), due));
-					}
-					jobReSchedule.Find(x => x.wo == copyJobs[i][j].wo).processCost[index] = copyJobs[i][j].duration;
-					copyJobs[i][j] = new Job();
-				}
-			}
-		}
-
-		for (int i = 0;  i<copyMachineNextAvailable.Count; i++)
-		{
-			if (copyMachineNextAvailable.ElementAt(i).Value < timeAndWO.Item1)
-			{
-				var key = copyMachineNextAvailable.ElementAt(i).Key;
-				copyMachineNextAvailable.Remove(key);
-				copyMachineNextAvailable.Add(key, timeAndWO.Item1);
-			}
-
-		}
-		for (int i = 0;  i<copyWONextAvailable.Count; i++)
-		{
-			if (copyWONextAvailable.ElementAt(i).Value < timeAndWO.Item1)
-			{
-				var key = copyWONextAvailable.ElementAt(i).Key;
-				copyWONextAvailable.Remove(key);
-				copyWONextAvailable.Add(key, timeAndWO.Item1);
-			}
-
-		}
-		//copy job list and dicts from here because the init is finshed
-		for (int i = 0; i < stateContainer.GetGAConfig().iteration; i++)
-		{
-			try
-			{
-				tmpJobs = GenericAlgo.CopyMachineBuffer(copyJobs);
-				tmpMachineNextAvailable = new Dictionary<(string, string), DateTime>(copyMachineNextAvailable);
-				tmpWONextAvailable = new Dictionary<string, DateTime>(copyWONextAvailable);
-				GenericAlgo.ReassignJobsToMachineBuffer(jobReSchedule, ref tmpJobs, machineTypeCount);
-				GenericAlgo.FillJobsTimes(ref tmpJobs, stateContainer.GetMachineTable(), GetTypeJobsCount(tmpJobs, machineTypeCount), ref tmpMachineNextAvailable, ref tmpWONextAvailable);
-				TimeSpan newTime = GenericAlgo.CalculateDueTime(stateContainer.GetWOJobs(), tmpWONextAvailable);
-				if (newTime < addWOBestDueTime)
-				{
-					addWOBestDueTime = newTime;
-					newBestJobs = tmpJobs;
-					newBestMachineNextAvailable = tmpMachineNextAvailable;
-					newBestWONextAvailable = tmpWONextAvailable;
-				}
-				Console.WriteLine(".");
-				await Task.Delay(1);
-			}
-			catch (Exception e)
-			{
-				Console.WriteLine(e.ToString());
-			}
-		}
-		SchedulingHistory newScheduling = new SchedulingHistory(i, newBestJobs, addWOBestDueTime, newBestMachineNextAvailable, newBestWONextAvailable);
-		stateContainer.SetCurrentScheduling(newScheduling);
-		stateContainer.AddSchedulingData(newScheduling);
-		toastService.ShowSuccess("rescheduling finished");
-		StateHasChanged();*/
-	}
-
 	private void InitCopy()//copy job lists and dynamic programing dicts
 	{
 		addWOBestDueTime = TimeSpan.MaxValue;
 		copyJobs = GenericAlgo.CopyMachineBuffer(jobs);
 		copyMachineNextAvailable = new Dictionary<(string, string), DateTime>(machineNextAvailable);
 		copyWONextAvailable = new Dictionary<string, DateTime>(woNextAvailable);
-	}
-
-	private List<int> GetTypeJobsCount(List<List<Job>> jobs, Dictionary<string, int> machineTypeCount)
-	{ 
-		List<int> res = new();
-		for (int i = 0; i < jobs.Count; i++)
-		{
-			int eachTypeCount = 0;
-			for (int j = 0; j < jobs[i].Count; j++)
-			{
-				if (!jobs[i][j].idle)
-				{
-					eachTypeCount++;
-				}
-			}
-			res.Add(eachTypeCount);
-		}
-		return res;
 	}
 }
