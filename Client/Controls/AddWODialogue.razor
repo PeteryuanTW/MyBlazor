@@ -55,6 +55,8 @@
     public MachineWOJobs jobsInMachine { get; set; }
     [Parameter]
     public EventCallback<bool> display { get; set; }
+    [Parameter]
+    public EventCallback<Job> ECNewJob { get; set; } 
 
     private string newWO = "";
     private string woNameCssString = "";
@@ -95,12 +97,13 @@
     }
     private void SetLastAvailableTime()
     {
-        minTime = jobsInMachine.woJobsInMachine[^1].startAndEndTime.endTime;
-        lastAvailableTime = jobsInMachine.woJobsInMachine[^1].startAndEndTime.endTime;
-        newWOendTime = jobsInMachine.woJobsInMachine[^1].startAndEndTime.endTime;
+        minTime = DateTime.Now;
+        lastAvailableTime = DateTime.Now;;
+        newWOendTime = DateTime.Now;;
     }
-    private async void AddNewWO()
+    private void AddNewWO()
     {
+        #region validation
         bool flag = true;
         if (newWO == "")
         {
@@ -121,17 +124,15 @@
             StateHasChanged();
             flag = false;
         }
-        
+
         if (!flag)
         {
-            await Task.Delay(1500);
-            woNameCssString = "";
-            startTimeCssString = "";
-            endTimeCssString = "";
-            StateHasChanged();
             return;
         }
-
+        #endregion
+        Job newJob = new Job(newWO, 2, newWOendTime - lastAvailableTime);
+        newJob.SetStartTime(lastAvailableTime);
+        ECNewJob.InvokeAsync(newJob);
     }
 
     private void CloseDialogue()

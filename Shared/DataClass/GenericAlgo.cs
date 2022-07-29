@@ -256,6 +256,10 @@ namespace MyBlazor.Shared.DataClass
 			}
 		}
 
-
+		public static bool JobsOverlap(StartTimeAndEndTime originalInterval, StartTimeAndEndTime newInterval)
+		{
+			bool res = false;
+			return res;
+		}
 	}
 }

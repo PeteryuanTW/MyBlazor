@@ -221,7 +221,11 @@ public class StateContainer
     }
 
     #endregion
+    #region stations
+    //private MyTreeNode stations = new("root", new List<MyTreeNode>());
+    
 
+    #endregion
 
     public event Action? OnChange;
     public void NotifyStateChanged() => OnChange?.Invoke();
