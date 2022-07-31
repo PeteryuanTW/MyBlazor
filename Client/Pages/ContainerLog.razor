@@ -1,16 +1,20 @@
 ﻿@page "/containerLog"
 @using MyBlazor.Shared.DataClass
 @inject StateContainer stateContainer
-<!--
-<MachineStateTable></MachineStateTable>
-<WorkOrdersJobs></WorkOrdersJobs>-->
-
+<ul level="0">
+  @foreach(MyTreeNode item in tn)
+  {
+    <TreeNode node=@item Level=1 @key=item/>
+  }
+</ul>
 @code {
 	List<MyTreeNode> tn = new();
 	protected override Task OnInitializedAsync()
 	{
 		AddRawData(tn,new StationInfo("F1", "L1", "P1", "M1", "-1"));
 		AddRawData(tn, new StationInfo("F1", "L1", "P1", "M1", "-2"));
+		AddRawData(tn, new StationInfo("F1", "L1", "P2", "M1", "-1"));
+		AddRawData(tn, new StationInfo("F2", "L1", "P1", "M1", "-3"));
 		return base.OnInitializedAsync();
 	}
 
@@ -27,5 +31,4 @@
 		}
 	}
 
-	private
 }
